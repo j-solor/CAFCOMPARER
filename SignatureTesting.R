@@ -74,12 +74,12 @@ setwd("/home/margaux.dore/Documents/CAFCOMPARER")
 # Data loading
 ## CAF
 acafs.info <- read_tsv("data/CAF_metadata.tsv") # metadata about CAFs 
-acafs.raw <- read_tsv("data/CAF_rawcounts.tsv") %>% # table de comptage
+acafs.raw <- read_tsv("data/CAF_rawcounts.tsv") %>% # count table
   dplyr::select(EnsemblID, acafs.info$rawID) %>%
   dplyr::relocate(EnsemblID, acafs.info$rawID)
 
 ## Signatures
-if (is.null(signature_selection)){ #initialize at 
+if (is.null(signature_selection)){ # initialize at NULL
   signatures = tibble(signature = character(), value = character())
   sign_list <- excel_sheets("data/CAF_signatures.xlsx") # list of sheet's names
 for (sign in sign_list){
@@ -96,7 +96,7 @@ for (sign in sign_list){
   
 }
 
-list_of_signatures <- split(signatures, f = signatures$signature) %>% # list of list of gene names in each sheet
+list_of_signatures <- split(signatures, f = signatures$signature) %>% # list of lists of gene names in each sheet
   map(~ .$value)
 
 # Preprocessing
@@ -111,7 +111,7 @@ if (sample_ID == "public") {
   acafs.info <- column_to_rownames(acafs.info, "Name")
 }
 
-acafs.raw <-column_to_rownames(acafs.raw, "EnsemblID") # table de comptage (EnsemblID)
+acafs.raw <-column_to_rownames(acafs.raw, "EnsemblID") # count table (EnsemblID)
 
 ## Normalize
 acafs.tmm <- Exclude_0s(acafs.raw, 0.5) %>% DGEList() %>% # normalized count table
