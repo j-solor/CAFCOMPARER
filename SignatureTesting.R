@@ -5,13 +5,14 @@ library(org.Hs.eg.db)
 library(readxl)
 library(GSVA)
 library(pheatmap)
+
 library(biomaRt)
 
 ################################################################################
 sample_ID = "private" # private | public
 signature_selection = NULL  # Luo_NatCom2022 | Foster_CancerCell2022 | Huang_CancerCell2022 | Verginadis_NatureCellBio2022 | Grauel_NatComms2020 | Carpenter_CancerDiscovery2023
 include_tech_annot = FALSE # TRUE | FALSE
-whatever_genes_filename = "Receptors_HGNC.csv" # Receptors_info.csv "whatever csv ythat uses tab as separator and has columns of groups (avoid spaces in names)
+whatever_genes_filename = "sammy.csv" # Receptors_info.csv "whatever csv ythat uses tab as separator and has columns of groups (avoid spaces in names)
 ################################################################################
 
 #' Filter a dataframe to keep genes with at least a defined % of non 0 expression samples
@@ -89,7 +90,7 @@ for (sign in sign_list){
   signatures <- bind_rows(signatures, signatures_temp) # table with gene name in each sheet
 }
 
-}else {
+} else {
   signatures <-  read_xlsx("data/CAF_signatures.xlsx", sheet = signature_selection) %>% 
     pivot_longer(cols = everything(), names_to = "signature")
   
@@ -193,3 +194,23 @@ cafs.choose.sym[rownames(gene_anotation),] %>%
   pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",whatever_genes_filename,".png"),
            cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
            annotation_row = gene_anotation)
+
+#### Statistics
+
+length(whatever_genes$value)
+length(dplyr::filter(whatever_genes, value %in% rownames(cafs.choose.sym))$value) 
+
+# Genes not in the count table :
+length(whatever_genes$value) - length(dplyr::filter(whatever_genes, value %in% rownames(cafs.choose.sym))$value) 
+dplyr::filter(whatever_genes, !(value %in% rownames(cafs.choose.sym)))
+
+### Violin plot
+
+plot_tb <- cafs.choose.sym[rownames(gene_anotation),] %>%
+  pivot_longer(cols = everything(), names_to = "CAF")
+
+ggplot(plot_tb, aes(x=CAF, y=value)) +
+  geom_violin(trim = FALSE) +
+  coord_flip() +
+  geom_boxplot(width=0.1) 
+
