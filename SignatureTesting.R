@@ -12,7 +12,7 @@ library(biomaRt)
 sample_ID = "private" # private | public
 signature_selection = NULL  # Luo_NatCom2022 | Foster_CancerCell2022 | Huang_CancerCell2022 | Verginadis_NatureCellBio2022 | Grauel_NatComms2020 | Carpenter_CancerDiscovery2023
 include_tech_annot = FALSE # TRUE | FALSE
-whatever_genes_filename = "sammy.csv" # Receptors_info.csv "whatever csv ythat uses tab as separator and has columns of groups (avoid spaces in names)
+whatever_genes_filename = "Receptors_HGNC.csv" # Receptors_info.csv "whatever csv ythat uses tab as separator and has columns of groups (avoid spaces in names)
 ################################################################################
 
 #' Filter a dataframe to keep genes with at least a defined % of non 0 expression samples
@@ -209,8 +209,18 @@ dplyr::filter(whatever_genes, !(value %in% rownames(cafs.choose.sym)))
 plot_tb <- cafs.choose.sym[rownames(gene_anotation),] %>%
   pivot_longer(cols = everything(), names_to = "CAF")
 
+levels <- group_by(plot_tb, CAF) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
+tb_organized <- plot_tb %>% dplyr::mutate(CAF = fct(CAF, levels = levels$CAF))
+
 ggplot(plot_tb, aes(x=CAF, y=value)) +
   geom_violin(trim = FALSE) +
   coord_flip() +
-  geom_boxplot(width=0.1) 
+  geom_boxplot(width=0.1) +
+  labs(x = "CAFs", y = "Genes")
 
+### Boxplot 
+
+ggplot(tb_organized, aes(x=CAF, y=value)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = "CAFs", y = "Genes")
