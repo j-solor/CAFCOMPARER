@@ -5,7 +5,6 @@ library(org.Hs.eg.db)
 library(readxl)
 library(GSVA)
 library(pheatmap)
-
 library(biomaRt)
 
 ################################################################################
@@ -14,120 +13,12 @@ signature_selection = NULL  # Luo_NatCom2022 | Foster_CancerCell2022 | Huang_Can
 include_tech_annot = FALSE # TRUE | FALSE
 whatever_genes_filename = "Receptors_HGNC.csv" # Receptors_info.csv "whatever csv ythat uses tab as separator and has columns of groups (avoid spaces in names)
 ################################################################################
-
-#' Filter a dataframe to keep genes with at least a defined % of non 0 expression samples
-#'@description
-#' `Exclude_0s` requires a data.frame with genes as rows,
-#'  and its ids as rownames. returns a dataframe
-
-Exclude_0s <- function(df, threshold){
-  
-  n0s <- apply(df, 1, function(x) {
-    sum(
-      x > 0
-    )/length(x)
-  })
-  
-  
-  df.f <- df[which(n0s > threshold), ]
-  return(df.f)
-}
-
-ID_converter <- function(df, # dataset with ProbeIDs as rownames
-                         annotation_table, # Bioconductor annotation table ie. AnnotationDbi::select(hgu219.db, probes, c("SYMBOL", "ENSEMBL", "GENENAME"))
-                         old_IDs, # Current IDs ("SYMBOL", "ENSEMBL", "GENENAME")
-                         new_IDs # Desired IDs ("SYMBOL", "ENSEMBL", "GENENAME")
-)
-  #TBI: choose function of aggregation
-{
-  final_df <- merge(df,annotation_table, by.x=0, by.y=old_IDs)
-  
-  # Stats of conversion
-  non_agg <- nrow(final_df) # nb of genes 
-  non_agg_uniq <- length(unique(final_df[new_IDs])) # nb of unique 
-  non_agg_nas <- sum(is.na(final_df[new_IDs])) # nb of gene with no new_ID 
-  non_agg_nonas <- non_agg-non_agg_nas # 
-  
-  # Conversion
-  final_df <- aggregate(final_df,
-                        final_df[new_IDs],
-                        FUN = mean) %>% 
-    column_to_rownames(new_IDs) %>% 
-    subset(select = colnames(df))
-  
-  agg <- nrow(final_df)
-  
-  print(paste(100*(non_agg-agg)/non_agg,
-              "% of the originally merged df have been agregated/removed"))
-  
-  print(paste(100*(non_agg_nas)/non_agg,
-              "% of the originally merged df have been removed due no", new_IDs))
-  
-  print(paste(100*(non_agg_nonas - agg)/non_agg,
-              "% of the non NAs df have been aggregated"))
-  
-  return(final_df)
-}
-
-# Function that translate gene ID from mice CAFs to human ID orthologs using BiomaRt
-
-mouseID_to_humanID <- function(df, mart) {
-  
-  # Get the mouse gene names from the df in argument 
-  mouse_genes <- c()
-  for (val in df$value) {
-    if(!is.na(val) && str_detect(val, "[[:lower:]]")) {
-      mouse_genes <- c(mouse_genes, val) 
-    }
-  }
-  
-  # Run biomart
-  human_id = getBM(attributes = c("ensembl_gene_id", "external_gene_name","hsapiens_homolog_ensembl_gene", "hsapiens_homolog_associated_gene_name"),
-                   filters = "external_gene_name",
-                   values = mouse_genes,
-                   mart = mart)
-  
-  # Mouse genes not present in the database
-  not_in_db <- setdiff(mouse_genes, human_id$external_gene_name)
-  
-  # Mouse genes without human orthologs
-  without_ortho <- dplyr::filter(human_id, hsapiens_homolog_ensembl_gene == "") %>% 
-    dplyr::pull(external_gene_name)
-  
-  # Filter the mouse genes without human orthologs 
-  human_id_final <- dplyr::filter(human_id, hsapiens_homolog_ensembl_gene != "") 
-  
-  # Mouse genes with multiple orthologs
-  multiple_ortho <- dplyr::filter(human_id_final, duplicated(external_gene_name)) %>% 
-    dplyr::pull(external_gene_name)
-  
-  # Modify the df in argument : convert the mouse ID into human ID
-  res <- left_join(df, human_id_final, by = c("value" = "external_gene_name"), relationship = "many-to-many") %>%
-    mutate(value = ifelse(is.na(hsapiens_homolog_associated_gene_name), value, hsapiens_homolog_associated_gene_name)) %>%
-    dplyr::select(signature, value) %>%
-    dplyr::filter(!is.na(value))
-  
-  # Filter fom the result table the mouse genes that were not in the database
-  final <- anti_join(res, data.frame(value = c(not_in_db, without_ortho)), by = "value")
-  
-  # Warning messages 
-  if(length(not_in_db) > 0) {
-    cat("The following mouse genes were not found in the ensembl database :", paste(not_in_db, collapse = ", "), "\n\n")
-  }
-  
-  if(length(without_ortho) > 0) {
-    cat("The following mouse genes don't have human orthologs :", paste(without_ortho, collapse = ", "), "\n\n")
-  }
-  
-  if(length(multiple_ortho) > 0) {
-    cat("The following mouse genes have multiple human orthologs :", paste(multiple_ortho, collapse = ", "))
-  }
-  
-  return(final)
-}
-
-################################################################################
 setwd("/home/margaux.dore/Documents/CAFCOMPARER")
+
+# Functions 
+source("src/Exclude_0s.R")
+source("src/ID_converter.R")
+source("src/mouseID_to_humanID.R")
 
 # Data loading
 ## CAF
@@ -210,8 +101,12 @@ pheatmap(gsvaRes,
 
 ### Specific pheatmaps per signature set (output in files)
 
+#### Convert the mouse gene names into their human ortholog
+ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl") # the mart
+signatures_human = mouseID_to_humanID(signatures, ensembl)
+
 for (sign in sign_list){
-  sign_sub <- dplyr::filter(signatures, str_detect(signature, sign)) %>% # filter the signatures == sign
+  sign_sub <- dplyr::filter(signatures_human, str_detect(signature, sign)) %>% # filter the signatures == sign
     dplyr::filter(value %in% rownames(cafs.choose.sym)) %>% # only keep the values present in cafs.choose.sym
     group_by(value) %>% 
     mutate(signature = ifelse(base::duplicated(value,fromLast=T), "multiple", signature)) %>%
