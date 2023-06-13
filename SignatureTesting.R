@@ -68,6 +68,64 @@ ID_converter <- function(df, # dataset with ProbeIDs as rownames
   
   return(final_df)
 }
+
+# Function that translate gene ID from mice CAFs to human ID orthologs using BiomaRt
+
+mouseID_to_humanID <- function(df, mart) {
+  
+  # Get the mouse gene names from the df in argument 
+  mouse_genes <- c()
+  for (val in df$value) {
+    if(!is.na(val) && str_detect(val, "[[:lower:]]")) {
+      mouse_genes <- c(mouse_genes, val) 
+    }
+  }
+  
+  # Run biomart
+  human_id = getBM(attributes = c("ensembl_gene_id", "external_gene_name","hsapiens_homolog_ensembl_gene", "hsapiens_homolog_associated_gene_name"),
+                   filters = "external_gene_name",
+                   values = mouse_genes,
+                   mart = mart)
+  
+  # Mouse genes not present in the database
+  not_in_db <- setdiff(mouse_genes, human_id$external_gene_name)
+  
+  # Mouse genes without human orthologs
+  without_ortho <- dplyr::filter(human_id, hsapiens_homolog_ensembl_gene == "") %>% 
+    dplyr::pull(external_gene_name)
+  
+  # Filter the mouse genes without human orthologs 
+  human_id_final <- dplyr::filter(human_id, hsapiens_homolog_ensembl_gene != "") 
+  
+  # Mouse genes with multiple orthologs
+  multiple_ortho <- dplyr::filter(human_id_final, duplicated(external_gene_name)) %>% 
+    dplyr::pull(external_gene_name)
+  
+  # Modify the df in argument : convert the mouse ID into human ID
+  res <- left_join(df, human_id_final, by = c("value" = "external_gene_name"), relationship = "many-to-many") %>%
+    mutate(value = ifelse(is.na(hsapiens_homolog_associated_gene_name), value, hsapiens_homolog_associated_gene_name)) %>%
+    dplyr::select(signature, value) %>%
+    dplyr::filter(!is.na(value))
+  
+  # Filter fom the result table the mouse genes that were not in the database
+  final <- anti_join(res, data.frame(value = c(not_in_db, without_ortho)), by = "value")
+  
+  # Warning messages 
+  if(length(not_in_db) > 0) {
+    cat("The following mouse genes were not found in the ensembl database :", paste(not_in_db, collapse = ", "), "\n\n")
+  }
+  
+  if(length(without_ortho) > 0) {
+    cat("The following mouse genes don't have human orthologs :", paste(without_ortho, collapse = ", "), "\n\n")
+  }
+  
+  if(length(multiple_ortho) > 0) {
+    cat("The following mouse genes have multiple human orthologs :", paste(multiple_ortho, collapse = ", "))
+  }
+  
+  return(final)
+}
+
 ################################################################################
 setwd("/home/margaux.dore/Documents/CAFCOMPARER")
 
@@ -147,13 +205,11 @@ if (include_tech_annot == TRUE){
   
 } else {tech_annot = NULL}
 
-
 pheatmap(gsvaRes,
          cluster_cols = T, cluster_rows = T, annotation_col = tech_annot)
 
 ### Specific pheatmaps per signature set (output in files)
 
-#sign = "Foster_CancerCell2022"
 for (sign in sign_list){
   sign_sub <- dplyr::filter(signatures, str_detect(signature, sign)) %>% # filter the signatures == sign
     dplyr::filter(value %in% rownames(cafs.choose.sym)) %>% # only keep the values present in cafs.choose.sym
@@ -195,32 +251,25 @@ cafs.choose.sym[rownames(gene_anotation),] %>%
            cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
            annotation_row = gene_anotation)
 
-#### Statistics
-
-length(whatever_genes$value)
-length(dplyr::filter(whatever_genes, value %in% rownames(cafs.choose.sym))$value) 
-
-# Genes not in the count table :
-length(whatever_genes$value) - length(dplyr::filter(whatever_genes, value %in% rownames(cafs.choose.sym))$value) 
-dplyr::filter(whatever_genes, !(value %in% rownames(cafs.choose.sym)))
-
 ### Violin plot
 
-plot_tb <- cafs.choose.sym[rownames(gene_anotation),] %>%
-  pivot_longer(cols = everything(), names_to = "CAF")
+tb_cafs_GE <- cafs.gene.expression %>%
+  pivot_longer(cols = -CL, names_to = "genes")
 
-levels <- group_by(plot_tb, CAF) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
-tb_organized <- plot_tb %>% dplyr::mutate(CAF = fct(CAF, levels = levels$CAF))
+whatever_genes_violin <- left_join(whatever_genes, tb_cafs_GE, by = c("value" = "genes")) %>%
+  dplyr::rename(genes = value, value = value.y, Signature = signature) 
+#%>% dplyr::filter(!is.na(CL))
 
-ggplot(plot_tb, aes(x=CAF, y=value)) +
+levels <- group_by(whatever_genes_violin, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
+tb_organized <- whatever_genes_violin %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
+
+ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
   geom_violin(trim = FALSE) +
-  coord_flip() +
   geom_boxplot(width=0.1) +
   labs(x = "CAFs", y = "Genes")
 
-### Boxplot 
+#### Boxplot 
 
-ggplot(tb_organized, aes(x=CAF, y=value)) +
+ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
   geom_boxplot() +
-  coord_flip() +
   labs(x = "CAFs", y = "Genes")
