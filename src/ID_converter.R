@@ -1,13 +1,26 @@
-#' Convert gene IDs into desired gene IDs  
+#' Convert the IDs of a gene expression table based inan annotation table 
 #'
 #' @description
-#' `ID_converter` requires a data.frame with genes as rows,
-#'  and its ids as rownames. returns a dataframe
+#' `ID_converter` takes a dataframe with some define IDs as rownames and translate these to others based in an annotation table and strings determining the new and old ID.
+#' 
+#' @usage 
+#' @param df dataset with ProbeIDs as rownames
+#' @param annotation_table  Bioconductor annotation table, or any other source 
+#' containing the original and the desired IDs correspondance ie. 
+#' AnnotationDbi::select(hgu219.db, probes, c("SYMBOL", "ENSEMBL", "GENENAME"))
+#' @param old_IDs string matching a name of `annotation_table` and rownames of `df`
+#' @param new_IDs string matching a name of `annotation_table` and desired new 
+#' rownames of `df`.
+#'
+#'@return
+#'`ID_converter` will return a data.frame with `new_IDs` equivalents as the 
+#'rownames. £ messages indicating statistics of this conversion will be produced
+#' indicating the % of rownames merged or withourt equivalents.
 
-ID_converter <- function(df, # dataset with ProbeIDs as rownames
-                         annotation_table, # Bioconductor annotation table ie. AnnotationDbi::select(hgu219.db, probes, c("SYMBOL", "ENSEMBL", "GENENAME"))
-                         old_IDs, # Current IDs ("SYMBOL", "ENSEMBL", "GENENAME")
-                         new_IDs # Desired IDs ("SYMBOL", "ENSEMBL", "GENENAME")
+ID_converter <- function(df, 
+                         annotation_table, 
+                         old_IDs,
+                         new_IDs 
 )
   #TBI: choose function of aggregation
 {
