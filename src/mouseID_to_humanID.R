@@ -1,12 +1,23 @@
-#' Translate mouse gene IDs to their human orthologs gene IDs  
+#' Translate mouse gene IDs to their human ortholog gene IDs  
 #'
 #' @description
-#' `mouseID_to_humanID` requires a data.frame with two columns,
-#' the first one named signature with all the signatures and a second 
-#' one named value with the gene names. This data frame is from the 
-#' CAF_signatures.xlsx excel file.
-#' This function uses Biomart so it also requires the mart.
-#' It returns a data.frame similar to the one needed in the input. 
+#' `mouseID_to_humanID` requires a data frame with mouse gene names in one column
+#' and replaces them with the gene names corresponding to their human ortholog 
+#' using biomart.
+#' 
+#' @usage 
+#' @param df data frame with mouse gene names in a column called value and the 
+#' signature corresponding to each gene in a column called signature.
+#' This data frame can be taken from the excel file CAF_signatures.xlsx.
+#' @param mart the name of the mart that will be used to find the human orthologs 
+#' with biomart.  
+#' 
+#' @return
+#' `mouseID_to_humanID` returns a data.frame similar to `df` where the mouse gene
+#' names are replaced with the gene names of their human ortholog. 
+#' Warning messages indicates the mouse genes that were not found in the database,
+#' the mouse genes without human orthologs or the mouse genes with multiple human
+#' orthologs.
 
 mouseID_to_humanID <- function(df, mart) {
   
