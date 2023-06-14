@@ -49,7 +49,7 @@ for (sign in sign_list){
 ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl") # the mart
 signatures_human <- mouseID_to_humanID(signatures, ensembl)
 
-list_of_signatures <- split(signatures, f = signatures$signature) %>% # list of lists of gene names in each sheet
+list_of_signatures <- split(signatures_human, f = signatures_human$signature) %>% # list of lists of gene names in each sheet
   map(~ .$value)
 
 # Preprocessing
