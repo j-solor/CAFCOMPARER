@@ -45,6 +45,10 @@ for (sign in sign_list){
   
 }
 
+## Call the mouseID_to_humanID to only have human genes in signatures
+ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl") # the mart
+signatures_human <- mouseID_to_humanID(signatures, ensembl)
+
 list_of_signatures <- split(signatures, f = signatures$signature) %>% # list of lists of gene names in each sheet
   map(~ .$value)
 
@@ -102,8 +106,6 @@ pheatmap(gsvaRes,
 ### Specific pheatmaps per signature set (output in files)
 
 #### Convert the mouse gene names into their human ortholog
-ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl") # the mart
-signatures_human = mouseID_to_humanID(signatures, ensembl)
 
 for (sign in sign_list){
   sign_sub <- dplyr::filter(signatures_human, str_detect(signature, sign)) %>% # filter the signatures == sign
