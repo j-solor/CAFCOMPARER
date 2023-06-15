@@ -195,4 +195,28 @@ cafs.choose.sym[rownames(gene_anotation),] %>%
            cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
            annotation_row = gene_anotation)
 
-# Test the branch
+### The violin plot
+
+tb_cafs_GE <- cafs.gene.expression %>%
+  pivot_longer(cols = -CL, names_to = "genes")
+
+whatever_genes_violin <- left_join(whatever_genes, tb_cafs_GE, by = c("value" = "genes")) %>%
+  dplyr::rename(genes = value, value = value.y, Signature = signature) %>%
+  dplyr::filter(!is.na(CL))
+
+levels <- group_by(whatever_genes_violin, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
+tb_organized <- whatever_genes_violin %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
+
+ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width=0.1) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "CAFs", y = "Gene expression")
+
+### The boxplot
+
+ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "CAFs", y = "Gene expression")
+
