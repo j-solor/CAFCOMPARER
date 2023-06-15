@@ -118,6 +118,10 @@ for (sign in sign_list){
   
   gsvaRes_sub <- as.data.frame(t(gsvaRes[unique(sign_sub$signature)[!unique(sign_sub$signature) == 'multiple'],]))
   
+  if((gsvaRes_sub %>% summarize(count = n())) == 1) {
+    rownames(gsvaRes_sub) <- sign
+  }
+  
   cafs.choose.sym[rownames(sign_sub),] %>% 
     pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
              cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = gsvaRes_sub,
