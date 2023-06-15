@@ -89,7 +89,7 @@ dplyr::mutate(cafs.gene.expression, CL = fct(CL, levels = arrange(cafs.gene.expr
   theme_bw()
 
 ## GSEA of signatures
-gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures)
+gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 10)
 
 ### pheatmap of all the CAF subtypes
 if (include_tech_annot == TRUE){
