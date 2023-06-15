@@ -194,3 +194,5 @@ cafs.choose.sym[rownames(gene_anotation),] %>%
   pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",whatever_genes_filename,".png"),
            cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
            annotation_row = gene_anotation)
+
+# Test the branch
