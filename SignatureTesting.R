@@ -245,3 +245,5 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
              cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
              annotation_row = gene_anotation)
 }
+
+test <- whatever_genes_function("data/Receptors_HGNC.csv", cafs.choose.sym, "output/test_2.png")
