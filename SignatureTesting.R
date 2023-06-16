@@ -244,6 +244,25 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
     pheatmap(cellwidth=15, cellheight=15, filename = paste0(output_file),
              cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
              annotation_row = gene_anotation)
+  
+  tb_cafs_GE <- as_tibble(expression_table, rownames = "gene") %>% 
+    pivot_longer(cols = -gene , names_to = "CL",values_to = "value" )
+  
+  whatever_genes_boxplot <- left_join(whatever_genes, tb_cafs_GE, by = c("value" = "gene")) %>%
+    dplyr::rename(gene = value, value = value.y, Signature = signature) %>%
+    dplyr::filter(!is.na(CL))
+  
+  levels <- group_by(whatever_genes_violin, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
+  tb_organized <- whatever_genes_violin %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
+  
+  dev.off()
+  
+  boxplot_whatever_genes <- ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
+    geom_boxplot() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    labs(x = "CAFs", y = "Gene expression")
+  
+  print(boxplot_whatever_genes)
 }
 
-test <- whatever_genes_function("data/Receptors_HGNC.csv", cafs.choose.sym, "output/test_2.png")
+whatever_genes_function("data/Receptors_HGNC.csv", cafs.choose.sym, "output/test_2.png")
