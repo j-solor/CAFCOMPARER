@@ -265,4 +265,4 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
   print(boxplot_whatever_genes)
 }
 
-whatever_genes_function("data/Receptors_HGNC.csv", cafs.choose.sym, "output/test_2.png")
+whatever_genes_function("data/sammy.csv", cafs.choose.sym, "output/sammy_3.png")
