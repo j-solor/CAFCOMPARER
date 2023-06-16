@@ -220,3 +220,28 @@ ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   labs(x = "CAFs", y = "Gene expression")
 
+### Function 
+
+whatever_genes_function <- function(file_path, expression_table, output_file) {
+  
+  whatever_genes <- read_tsv(paste0(file_path)) %>%
+    pivot_longer(cols = everything(), names_to = "signature") %>%
+    dplyr::filter(!is.na(value))
+  
+  list_of_whatever_genes <- split(whatever_genes, f = whatever_genes$signature) %>%
+    map(~ .$value)
+  
+  gsvaRes_whatever_genes <- gsva(data.matrix(expression_table), list_of_whatever_genes)
+  
+  gene_anotation <- dplyr::filter(whatever_genes, value %in% rownames(expression_table)) %>% 
+    group_by(value) %>% 
+    mutate(signature = ifelse(base::duplicated(value,fromLast=T), "multiple", signature)) %>%
+    distinct(value, .keep_all = T,) %>%
+    dplyr::arrange(signature) %>%
+    column_to_rownames("value")
+  
+  cafs.choose.sym[rownames(gene_anotation),] %>% 
+    pheatmap(cellwidth=15, cellheight=15, filename = paste0(output_file),
+             cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
+             annotation_row = gene_anotation)
+}
