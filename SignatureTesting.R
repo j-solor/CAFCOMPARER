@@ -116,7 +116,12 @@ for (sign in sign_list){
     dplyr::arrange(signature) %>%
     column_to_rownames("value")
   
-  gsvaRes_sub <- as.data.frame(t(gsvaRes[unique(sign_sub$signature)[!unique(sign_sub$signature) == 'multiple'],]))
+  unique_sign <- unique(sign_sub$signature)[!unique(sign_sub$signature) == 'multiple']
+  gsvaRes_sub <- as_tibble(gsvaRes, rownames = "signatures") %>%
+    filter(signatures %in% unique_sign) %>%
+    column_to_rownames(var = "signatures") %>%
+    t() %>%
+    as.data.frame() 
   
   if((gsvaRes_sub %>% summarize(count = n())) == 1) {
     rownames(gsvaRes_sub) <- sign
