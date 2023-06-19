@@ -117,20 +117,25 @@ for (sign in sign_list){
     column_to_rownames("value")
   
   unique_sign <- unique(sign_sub$signature)[!unique(sign_sub$signature) == 'multiple']
-  gsvaRes_sub <- as_tibble(gsvaRes, rownames = "signatures") %>%
-    filter(signatures %in% unique_sign) %>%
-    column_to_rownames(var = "signatures") %>%
-    t() %>%
-    as.data.frame() 
+  gsvaRes_filter <- as_tibble(gsvaRes, rownames = "signatures") %>%
+    filter(signatures %in% unique_sign)
   
-  if((gsvaRes_sub %>% summarize(count = n())) == 1) {
-    rownames(gsvaRes_sub) <- sign
+  if (nrow(gsvaRes_filter) != 0) {
+    gsvaRes_sub <- gsvaRes_filter %>%
+      column_to_rownames(var = "signatures") %>%
+      t() %>%
+      as.data.frame()
+    
+    cafs.choose.sym[rownames(sign_sub),] %>% 
+      pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
+               cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = gsvaRes_sub,
+               annotation_row = sign_sub)
+  } else {
+    cafs.choose.sym[rownames(sign_sub),] %>% 
+      pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
+               cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T,
+               annotation_row = sign_sub)
   }
-  
-  cafs.choose.sym[rownames(sign_sub),] %>% 
-    pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
-             cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = gsvaRes_sub,
-             annotation_row = sign_sub)
 }
 
 ## Whatever list of genes Enrichment and pheatmap
