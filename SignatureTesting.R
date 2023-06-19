@@ -224,7 +224,7 @@ ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
 
 whatever_genes_function <- function(file_path, expression_table, output_file) {
   
-  whatever_genes <- read_tsv(paste0(file_path)) %>%
+  whatever_genes <- read_tsv(file_path) %>%
     pivot_longer(cols = everything(), names_to = "signature") %>%
     dplyr::filter(!is.na(value))
   
@@ -240,8 +240,8 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
     dplyr::arrange(signature) %>%
     column_to_rownames("value")
   
-  cafs.choose.sym[rownames(gene_anotation),] %>% 
-    pheatmap(cellwidth=15, cellheight=15, filename = paste0(output_file),
+  expression_table[rownames(gene_anotation),] %>% 
+    pheatmap(cellwidth=15, cellheight=15, filename = output_file,
              cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
              annotation_row = gene_anotation)
   
@@ -252,8 +252,8 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
     dplyr::rename(gene = value, value = value.y, Signature = signature) %>%
     dplyr::filter(!is.na(CL))
   
-  levels <- group_by(whatever_genes_violin, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
-  tb_organized <- whatever_genes_violin %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
+  levels <- group_by(whatever_genes_boxplot, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
+  tb_organized <- whatever_genes_boxplot %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
   
   dev.off()
   
@@ -265,4 +265,4 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
   print(boxplot_whatever_genes)
 }
 
-whatever_genes_function("data/sammy.csv", cafs.choose.sym, "output/sammy_3.png")
+whatever_genes_function(file_path = "data/sammy.csv", expression_table = cafs.choose.sym, output_file = "output/test.png")
