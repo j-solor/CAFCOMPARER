@@ -245,32 +245,33 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
              cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
              annotation_row = gene_anotation)
   
-  tb_cafs_GE <- as_tibble(expression_table, rownames = "gene") %>% 
+  expression_table_boxplot <- as_tibble(expression_table, rownames = "gene") %>% # tb_cafs_GE
     pivot_longer(cols = -gene , names_to = "CL",values_to = "value" )
   
-  whatever_genes_boxplot <- left_join(whatever_genes, tb_cafs_GE, by = c("value" = "gene")) %>%
+  whatever_genes_boxplot <- left_join(whatever_genes, expression_table_boxplot, by = c("value" = "gene")) %>% 
     dplyr::rename(gene = value, value = value.y, Signature = signature) %>%
     dplyr::filter(!is.na(CL))
   
   levels <- group_by(whatever_genes_boxplot, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
-  tb_organized <- whatever_genes_boxplot %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
+  whatever_genes_organized <- whatever_genes_boxplot %>% dplyr::mutate(CL = fct(CL, levels = levels$CL)) # tb_organized
   
   dev.off()
   
-  boxplot_whatever_genes <- ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
+  boxplot <- ggplot(whatever_genes_organized, aes(x=CL, y=value, fill=Signature)) + # boxplot_whatever_genes
     geom_boxplot() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     labs(x = "CAFs", y = "Gene expression")
   
-  print(boxplot_whatever_genes)
+  print(boxplot)
   
   genes <- whatever_genes %>% dplyr::pull(value)
   heatmap_genes <- rownames(expression_table[rownames(gene_anotation),])
   missing_genes <- setdiff(genes, heatmap_genes)
+  
   if(length(missing_genes) > 0) {
     cat("The following genes were not in the expression table :", paste(missing_genes, collapse = ", "))
   }
   
 }
 
-whatever_genes_function(file_path = "data/sammy.csv", expression_table = cafs.choose.sym, output_file = "output/test.png")
+whatever_genes_function(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, output_file = "output/test.png")
