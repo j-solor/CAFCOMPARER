@@ -263,6 +263,14 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
     labs(x = "CAFs", y = "Gene expression")
   
   print(boxplot_whatever_genes)
+  
+  genes <- whatever_genes %>% dplyr::pull(value)
+  heatmap_genes <- rownames(expression_table[rownames(gene_anotation),])
+  missing_genes <- setdiff(genes, heatmap_genes)
+  if(length(missing_genes) > 0) {
+    cat("The following genes were not in the expression table :", paste(missing_genes, collapse = ", "))
+  }
+  
 }
 
 whatever_genes_function(file_path = "data/sammy.csv", expression_table = cafs.choose.sym, output_file = "output/test.png")
