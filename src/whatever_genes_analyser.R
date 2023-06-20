@@ -1,5 +1,5 @@
 
-whatever_genes_function <- function(file_path, expression_table, scale_option, output_file) {
+whatever_genes_analyze <- function(file_path, expression_table, scale_option, output_file) {
   
   # Main
   whatever_genes <- read_tsv(file_path) %>%
