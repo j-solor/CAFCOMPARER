@@ -1,24 +1,26 @@
 #' Analyse a set of genes using GSEA  
 #'
 #' @description
-#' `whatever_genes_analyser` requires an excel file gene names and realize a 
-#' Gene Set Enrichment Analysis before generating an heatmap and a boxplot.
+#' `whatever_genes_analyser` requires an excel file with gene names and realizes
+#'  a Gene Set Enrichment Analysis before generating an heatmap and a boxplot.
 #' 
 #' @usage 
-#' @param file_path the relative or absolute path to the excel file containing 
-#' the genes with ASK ABOUT THE SIGNATURES !!!!!!
+#' @param file_path the relative or absolute path to the excel file where each
+#' column is a set of genes.
 #' @param expression_table the name of the expression table that is going to be 
 #' used to analyse the genes in the excel file. 
-#' The table has to have gene names has rownames and the CAFs as column. ASKKKKK
-#' The cafs.choose.sym expression table can be used.
+#' The table has to have gene names has rownames and conditions as columns.
+#' The cafs.choose.sym expression table can be used (in this file the conditions
+#' are CAFs).
 #' @param scale_option this can be "row", "column" or "none" and it defines the 
 #' scaling of the heatmap. 
 #' @param output_file the name of the output file with its relative or absolute 
-#' path.
-#' DO I TALK ABOUT THE PDF ???????
+#' path in which the heatmap is going to be save. The file can be in various 
+#' formats : png, pdf, tiff, bmp and jpeg.
+#' To be able to use the heatmap as a svg file, use the pdf format. 
 #' 
 #' @return
-#' `whatever_genes_analyser` saves the heatmap of the GSEA in the output file 
+#' `whatever_genes_analyser` saves the heatmap of the GSEA in the `output file` 
 #' and displays the boxplot of the analysis.
 #' The warning message indicates the genes from the excel file that were not 
 #' found in the `expression_table`.
@@ -31,8 +33,8 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option,
     pivot_longer(cols = everything(), names_to = "signature") %>%
     dplyr::filter(!is.na(value))
   
-  list_of_whatever_genes <- split(whatever_genes, f = whatever_genes$signature) 
-  %>% map(~ .$value)
+  list_of_whatever_genes <- split(whatever_genes, f = whatever_genes$signature) %>% 
+    map(~ .$value)
   
   gsvaRes <- gsva(data.matrix(expression_table), list_of_whatever_genes)
   
@@ -62,8 +64,8 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option,
     dplyr::rename(gene = value, value = value.y, Signature = signature) %>%
     dplyr::filter(!is.na(CL))
   
-  levels <- group_by(whatever_genes_boxplot, CL) %>% summarise(mean=mean(value)) 
-  %>% arrange(dplyr::desc(mean))
+  levels <- group_by(whatever_genes_boxplot, CL) %>% summarise(mean=mean(value)) %>% 
+    arrange(dplyr::desc(mean))
   whatever_genes_organized <- whatever_genes_boxplot %>%
     dplyr::mutate(CL = fct(CL, levels = levels$CL)) # tb_organized
   
