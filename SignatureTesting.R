@@ -176,4 +176,4 @@ for (sign in sign_list){
 
 ## Whatever list of genes Enrichment and pheatmap
 ### The function
-whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "none", output_file = "output/test.pdf")
+whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/test.pdf")
