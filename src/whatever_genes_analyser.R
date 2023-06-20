@@ -33,10 +33,10 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option,
     pivot_longer(cols = everything(), names_to = "signature") %>%
     dplyr::filter(!is.na(value))
   
-  list_of_whatever_genes <- split(whatever_genes, f = whatever_genes$signature) %>% 
+  genes_by_set <- split(whatever_genes, f = whatever_genes$signature) %>% # list_of_whatever_genes
     map(~ .$value)
   
-  gsvaRes <- gsva(data.matrix(expression_table), list_of_whatever_genes)
+  gsvaRes <- gsva(data.matrix(expression_table), genes_by_set)
   
   # Plots
   ## Heatmap
@@ -59,19 +59,19 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option,
   expression_table_boxplot <- as_tibble(expression_table, rownames = "gene") %>% 
     pivot_longer(cols = -gene , names_to = "CL",values_to = "value" )
   
-  whatever_genes_boxplot <- left_join(whatever_genes, expression_table_boxplot, 
+  genes_tb_boxplot <- left_join(whatever_genes, expression_table_boxplot, # whatever_genes_boxplot
                                       by = c("value" = "gene")) %>% 
     dplyr::rename(gene = value, value = value.y, Signature = signature) %>%
     dplyr::filter(!is.na(CL))
   
-  levels <- group_by(whatever_genes_boxplot, CL) %>% summarise(mean=mean(value)) %>% 
+  levels <- group_by(genes_tb_boxplot, CL) %>% summarise(mean=mean(value)) %>% 
     arrange(dplyr::desc(mean))
-  whatever_genes_organized <- whatever_genes_boxplot %>%
+  genes_boxplot_organized <- genes_tb_boxplot %>% # whatever_genes_organized
     dplyr::mutate(CL = fct(CL, levels = levels$CL)) # tb_organized
   
   dev.off()
   
-  boxplot <- ggplot(whatever_genes_organized, aes(x=CL, y=value, fill=Signature)) + 
+  boxplot <- ggplot(genes_boxplot_organized, aes(x=CL, y=value, fill=Signature)) + 
     geom_boxplot() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     labs(x = "CAFs", y = "Gene expression")
@@ -88,5 +88,4 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option,
   }
   
 }
-
 
