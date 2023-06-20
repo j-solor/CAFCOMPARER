@@ -23,21 +23,23 @@
 #' The warning message indicates the genes from the excel file that were not 
 #' found in the `expression_table`.
 
-whatever_genes_analyser <- function(file_path, expression_table, scale_option, output_file) {
+whatever_genes_analyser <- function(file_path, expression_table, scale_option, 
+                                    output_file) {
   
   # Main
   whatever_genes <- read_tsv(file_path) %>%
     pivot_longer(cols = everything(), names_to = "signature") %>%
     dplyr::filter(!is.na(value))
   
-  list_of_whatever_genes <- split(whatever_genes, f = whatever_genes$signature) %>%
-    map(~ .$value)
+  list_of_whatever_genes <- split(whatever_genes, f = whatever_genes$signature) 
+  %>% map(~ .$value)
   
   gsvaRes <- gsva(data.matrix(expression_table), list_of_whatever_genes)
   
   # Plots
   ## Heatmap
-  gene_anotation <- dplyr::filter(whatever_genes, value %in% rownames(expression_table)) %>% 
+  gene_anotation <- dplyr::filter(whatever_genes, value %in% 
+                                    rownames(expression_table)) %>% 
     group_by(value) %>% 
     mutate(signature = ifelse(base::duplicated(value,fromLast=T),
                               "multiple", signature)) %>%
@@ -52,7 +54,7 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option, o
              annotation_row = gene_anotation)
   
   ## Boxplot
-  expression_table_boxplot <- as_tibble(expression_table, rownames = "gene") %>% # tb_cafs_GE
+  expression_table_boxplot <- as_tibble(expression_table, rownames = "gene") %>% 
     pivot_longer(cols = -gene , names_to = "CL",values_to = "value" )
   
   whatever_genes_boxplot <- left_join(whatever_genes, expression_table_boxplot, 
@@ -60,14 +62,14 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option, o
     dplyr::rename(gene = value, value = value.y, Signature = signature) %>%
     dplyr::filter(!is.na(CL))
   
-  levels <- group_by(whatever_genes_boxplot, CL) %>% summarise(mean=mean(value)) %>%
-    arrange(dplyr::desc(mean))
+  levels <- group_by(whatever_genes_boxplot, CL) %>% summarise(mean=mean(value)) 
+  %>% arrange(dplyr::desc(mean))
   whatever_genes_organized <- whatever_genes_boxplot %>%
     dplyr::mutate(CL = fct(CL, levels = levels$CL)) # tb_organized
   
   dev.off()
   
-  boxplot <- ggplot(whatever_genes_organized, aes(x=CL, y=value, fill=Signature)) + # boxplot_whatever_genes
+  boxplot <- ggplot(whatever_genes_organized, aes(x=CL, y=value, fill=Signature)) + 
     geom_boxplot() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     labs(x = "CAFs", y = "Gene expression")
