@@ -5,7 +5,6 @@ library(org.Hs.eg.db)
 library(readxl)
 library(GSVA)
 library(pheatmap)
-
 library(biomaRt)
 
 ################################################################################
@@ -14,62 +13,12 @@ signature_selection = NULL  # Luo_NatCom2022 | Foster_CancerCell2022 | Huang_Can
 include_tech_annot = FALSE # TRUE | FALSE
 whatever_genes_filename = "Receptors_HGNC.csv" # Receptors_info.csv "whatever csv ythat uses tab as separator and has columns of groups (avoid spaces in names)
 ################################################################################
-
-#' Filter a dataframe to keep genes with at least a defined % of non 0 expression samples
-#'@description
-#' `Exclude_0s` requires a data.frame with genes as rows,
-#'  and its ids as rownames. returns a dataframe
-
-Exclude_0s <- function(df, threshold){
-  
-  n0s <- apply(df, 1, function(x) {
-    sum(
-      x > 0
-    )/length(x)
-  })
-  
-  
-  df.f <- df[which(n0s > threshold), ]
-  return(df.f)
-}
-
-ID_converter <- function(df, # dataset with ProbeIDs as rownames
-                         annotation_table, # Bioconductor annotation table ie. AnnotationDbi::select(hgu219.db, probes, c("SYMBOL", "ENSEMBL", "GENENAME"))
-                         old_IDs, # Current IDs ("SYMBOL", "ENSEMBL", "GENENAME")
-                         new_IDs # Desired IDs ("SYMBOL", "ENSEMBL", "GENENAME")
-)
-  #TBI: choose function of aggregation
-{
-  final_df <- merge(df,annotation_table, by.x=0, by.y=old_IDs)
-  
-  # Stats of conversion
-  non_agg <- nrow(final_df) # nb of genes 
-  non_agg_uniq <- length(unique(final_df[new_IDs])) # nb of unique 
-  non_agg_nas <- sum(is.na(final_df[new_IDs])) # nb of gene with no new_ID 
-  non_agg_nonas <- non_agg-non_agg_nas # 
-  
-  # Conversion
-  final_df <- aggregate(final_df,
-                        final_df[new_IDs],
-                        FUN = mean) %>% 
-    column_to_rownames(new_IDs) %>% 
-    subset(select = colnames(df))
-  
-  agg <- nrow(final_df)
-  
-  print(paste(100*(non_agg-agg)/non_agg,
-              "% of the originally merged df have been agregated/removed"))
-  
-  print(paste(100*(non_agg_nas)/non_agg,
-              "% of the originally merged df have been removed due no", new_IDs))
-  
-  print(paste(100*(non_agg_nonas - agg)/non_agg,
-              "% of the non NAs df have been aggregated"))
-  
-  return(final_df)
-}
-################################################################################
 setwd("/home/margaux.dore/Documents/CAFCOMPARER")
+
+# Functions 
+source("src/Exclude_0s.R")
+source("src/ID_converter.R")
+source("src/mouseID_to_humanID.R")
 
 # Data loading
 ## CAF
@@ -90,13 +39,17 @@ for (sign in sign_list){
   signatures <- bind_rows(signatures, signatures_temp) # table with gene name in each sheet
 }
 
-}else {
+} else {
   signatures <-  read_xlsx("data/CAF_signatures.xlsx", sheet = signature_selection) %>% 
     pivot_longer(cols = everything(), names_to = "signature")
   
 }
 
-list_of_signatures <- split(signatures, f = signatures$signature) %>% # list of lists of gene names in each sheet
+## Call the mouseID_to_humanID to only have human genes in signatures
+ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl") # the mart
+signatures_human <- mouseID_to_humanID(signatures, ensembl)
+
+list_of_signatures <- split(signatures_human, f = signatures_human$signature) %>% # list of lists of gene names in each sheet
   map(~ .$value)
 
 # Preprocessing
@@ -136,7 +89,7 @@ dplyr::mutate(cafs.gene.expression, CL = fct(CL, levels = arrange(cafs.gene.expr
   theme_bw()
 
 ## GSEA of signatures
-gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures)
+gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 5)
 
 ### pheatmap of all the CAF subtypes
 if (include_tech_annot == TRUE){
@@ -147,15 +100,15 @@ if (include_tech_annot == TRUE){
   
 } else {tech_annot = NULL}
 
-
 pheatmap(gsvaRes,
          cluster_cols = T, cluster_rows = T, annotation_col = tech_annot)
 
 ### Specific pheatmaps per signature set (output in files)
 
-#sign = "Foster_CancerCell2022"
-for (sign in sign_list){
-  sign_sub <- dplyr::filter(signatures, str_detect(signature, sign)) %>% # filter the signatures == sign
+#### Convert the mouse gene names into their human ortholog
+
+for (sign in sign_list) {
+  sign_sub <- dplyr::filter(signatures_human, str_detect(signature, sign)) %>% # filter the signatures == sign
     dplyr::filter(value %in% rownames(cafs.choose.sym)) %>% # only keep the values present in cafs.choose.sym
     group_by(value) %>% 
     mutate(signature = ifelse(base::duplicated(value,fromLast=T), "multiple", signature)) %>%
@@ -163,11 +116,23 @@ for (sign in sign_list){
     dplyr::arrange(signature) %>%
     column_to_rownames("value")
   
-  gsvaRes_sub <- as.data.frame(t(gsvaRes[unique(sign_sub$signature)[!unique(sign_sub$signature) == 'multiple'],]))
+  unique_sign <- unique(sign_sub$signature)[!unique(sign_sub$signature) == 'multiple']
+  gsvaRes_filter <- as_tibble(gsvaRes, rownames = "signatures") %>%
+    filter(signatures %in% unique_sign)
+  
+  if (nrow(gsvaRes_filter) != 0) {
+    annotation_col <- gsvaRes_filter %>%
+      column_to_rownames(var = "signatures") %>%
+      t() %>%
+      as.data.frame()
+    
+  } else {
+    annotation_col = NULL
+  }
   
   cafs.choose.sym[rownames(sign_sub),] %>% 
-    pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
-             cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = gsvaRes_sub,
+    pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".pdf"),
+             cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = annotation_col,
              annotation_row = sign_sub)
 }
 
@@ -194,3 +159,26 @@ cafs.choose.sym[rownames(gene_anotation),] %>%
   pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",whatever_genes_filename,".png"),
            cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
            annotation_row = gene_anotation)
+
+### Violin plot
+
+tb_cafs_GE <- cafs.gene.expression %>%
+  pivot_longer(cols = -CL, names_to = "genes")
+
+whatever_genes_violin <- left_join(whatever_genes, tb_cafs_GE, by = c("value" = "genes")) %>%
+  dplyr::rename(genes = value, value = value.y, Signature = signature) 
+#%>% dplyr::filter(!is.na(CL))
+
+levels <- group_by(whatever_genes_violin, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
+tb_organized <- whatever_genes_violin %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
+
+ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width=0.1) +
+  labs(x = "CAFs", y = "Genes")
+
+#### Boxplot 
+
+ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
+  geom_boxplot() +
+  labs(x = "CAFs", y = "Genes")
