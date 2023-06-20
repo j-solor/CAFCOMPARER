@@ -68,6 +68,9 @@ ID_converter <- function(df, # dataset with ProbeIDs as rownames
   
   return(final_df)
 }
+
+source("src/whatever_genes_analyser.R")
+
 ################################################################################
 setwd("/home/margaux.dore/Documents/CAFCOMPARER")
 
