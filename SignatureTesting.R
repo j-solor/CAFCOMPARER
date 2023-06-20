@@ -19,6 +19,7 @@ setwd("/home/margaux.dore/Documents/CAFCOMPARER")
 source("src/Exclude_0s.R")
 source("src/ID_converter.R")
 source("src/mouseID_to_humanID.R")
+source("src/whatever_genes_analyser.R")
 
 # Data loading
 ## CAF
@@ -137,48 +138,5 @@ for (sign in sign_list) {
 }
 
 ## Whatever list of genes Enrichment and pheatmap
-whatever_genes <- read_tsv(paste0("data/",whatever_genes_filename)) %>%
-  pivot_longer(cols = everything(), names_to = "signature") %>%
-  dplyr::filter(!is.na(value))
+whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/test.pdf")
 
-list_of_whatever_genes <- split(whatever_genes, f = whatever_genes$signature) %>%
-  map(~ .$value)
-
-### GSEA
-gsvaRes_whatever_genes <- gsva(data.matrix(cafs.choose.sym), list_of_whatever_genes)
-
-### Plot
-gene_anotation <- dplyr::filter(whatever_genes, value %in% rownames(cafs.choose.sym)) %>% 
-  group_by(value) %>% 
-  mutate(signature = ifelse(base::duplicated(value,fromLast=T), "multiple", signature)) %>%
-  distinct(value, .keep_all = T,) %>%
-  dplyr::arrange(signature) %>%
-  column_to_rownames("value")
-
-cafs.choose.sym[rownames(gene_anotation),] %>% 
-  pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",whatever_genes_filename,".png"),
-           cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
-           annotation_row = gene_anotation)
-
-### Violin plot
-
-tb_cafs_GE <- cafs.gene.expression %>%
-  pivot_longer(cols = -CL, names_to = "genes")
-
-whatever_genes_violin <- left_join(whatever_genes, tb_cafs_GE, by = c("value" = "genes")) %>%
-  dplyr::rename(genes = value, value = value.y, Signature = signature) 
-#%>% dplyr::filter(!is.na(CL))
-
-levels <- group_by(whatever_genes_violin, CL) %>% summarise(mean=mean(value)) %>% arrange(dplyr::desc(mean))
-tb_organized <- whatever_genes_violin %>% dplyr::mutate(CL = fct(CL, levels = levels$CL))
-
-ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width=0.1) +
-  labs(x = "CAFs", y = "Genes")
-
-#### Boxplot 
-
-ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
-  geom_boxplot() +
-  labs(x = "CAFs", y = "Genes")
