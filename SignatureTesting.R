@@ -107,7 +107,7 @@ pheatmap(gsvaRes,
 
 #### Convert the mouse gene names into their human ortholog
 
-for (sign in sign_list){
+for (sign in sign_list) {
   sign_sub <- dplyr::filter(signatures_human, str_detect(signature, sign)) %>% # filter the signatures == sign
     dplyr::filter(value %in% rownames(cafs.choose.sym)) %>% # only keep the values present in cafs.choose.sym
     group_by(value) %>% 
@@ -121,21 +121,19 @@ for (sign in sign_list){
     filter(signatures %in% unique_sign)
   
   if (nrow(gsvaRes_filter) != 0) {
-    gsvaRes_sub <- gsvaRes_filter %>%
+    annotation_col <- gsvaRes_filter %>%
       column_to_rownames(var = "signatures") %>%
       t() %>%
       as.data.frame()
     
-    cafs.choose.sym[rownames(sign_sub),] %>% 
-      pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
-               cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = gsvaRes_sub,
-               annotation_row = sign_sub)
   } else {
-    cafs.choose.sym[rownames(sign_sub),] %>% 
-      pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
-               cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T,
-               annotation_row = sign_sub)
+    annotation_col = NULL
   }
+  
+  cafs.choose.sym[rownames(sign_sub),] %>% 
+    pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
+             cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = annotation_col,
+             annotation_row = sign_sub)
 }
 
 ## Whatever list of genes Enrichment and pheatmap
