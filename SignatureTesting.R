@@ -131,7 +131,7 @@ for (sign in sign_list) {
   }
   
   cafs.choose.sym[rownames(sign_sub),] %>% 
-    pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".png"),
+    pheatmap(cellwidth=15, cellheight=15, filename = paste0("output/",sign,".pdf"),
              cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = annotation_col,
              annotation_row = sign_sub)
 }
