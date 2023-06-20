@@ -1,3 +1,27 @@
+#' Analyse a set of genes using GSEA  
+#'
+#' @description
+#' `whatever_genes_analyser` requires an excel file gene names and realize a 
+#' Gene Set Enrichment Analysis before generating an heatmap and a boxplot.
+#' 
+#' @usage 
+#' @param file_path the relative or absolute path to the excel file containing 
+#' the genes with ASK ABOUT THE SIGNATURES !!!!!!
+#' @param expression_table the name of the expression table that is going to be 
+#' used to analyse the genes in the excel file. 
+#' The table has to have gene names has rownames and the CAFs as column. ASKKKKK
+#' The cafs.choose.sym expression table can be used.
+#' @param scale_option this can be "row", "column" or "none" and it defines the 
+#' scaling of the heatmap. 
+#' @param output_file the name of the output file with its relative or absolute 
+#' path.
+#' DO I TALK ABOUT THE PDF ???????
+#' 
+#' @return
+#' `whatever_genes_analyser` saves the heatmap of the GSEA in the output file 
+#' and displays the boxplot of the analysis.
+#' The warning message indicates the genes from the excel file that were not 
+#' found in the `expression_table`.
 
 whatever_genes_analyser <- function(file_path, expression_table, scale_option, output_file) {
   
