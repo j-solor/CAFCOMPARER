@@ -284,4 +284,4 @@ whatever_genes_function <- function(file_path, expression_table, scale_option, o
   
 }
 
-whatever_genes_function(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "none", output_file = "output/test.png")
+whatever_genes_function(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "none", output_file = "output/test.pdf")
