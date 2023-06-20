@@ -222,7 +222,7 @@ ggplot(tb_organized, aes(x=CL, y=value, fill=Signature)) +
 
 ### Function 
 
-whatever_genes_function <- function(file_path, expression_table, output_file) {
+whatever_genes_function <- function(file_path, expression_table, scale_option, output_file) {
   
   whatever_genes <- read_tsv(file_path) %>%
     pivot_longer(cols = everything(), names_to = "signature") %>%
@@ -242,7 +242,7 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
   
   expression_table[rownames(gene_anotation),] %>% 
     pheatmap(cellwidth=15, cellheight=15, filename = output_file,
-             cluster_cols = T, cluster_rows = F, scale = "row", show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
+             cluster_cols = T, cluster_rows = F, scale = scale_option, show_rownames = T, annotation_col = as.data.frame(t(gsvaRes_whatever_genes)),
              annotation_row = gene_anotation)
   
   expression_table_boxplot <- as_tibble(expression_table, rownames = "gene") %>% # tb_cafs_GE
@@ -274,4 +274,4 @@ whatever_genes_function <- function(file_path, expression_table, output_file) {
   
 }
 
-whatever_genes_function(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, output_file = "output/test.png")
+whatever_genes_function(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "none", output_file = "output/test.png")
