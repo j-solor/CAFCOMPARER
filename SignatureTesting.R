@@ -6,6 +6,7 @@ library(readxl)
 library(GSVA)
 library(pheatmap)
 library(biomaRt)
+library(UpSetR)
 
 ################################################################################
 sample_ID = "private" # private | public
@@ -139,4 +140,10 @@ for (sign in sign_list) {
 
 ## Whatever list of genes Enrichment and pheatmap
 whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/test.pdf")
+
+## Comparative analysis using UpsetPlots 
+
+
+
+
 
