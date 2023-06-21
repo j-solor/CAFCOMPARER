@@ -143,6 +143,14 @@ whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table 
 
 ## Comparative analysis using UpsetPlots 
 
+### Data format 
+signatures_upset <- pivot_wider(signatures_human, 
+                        names_from = "signature", 
+                        values_from = "signature",
+                        values_fill = 0,
+                        values_fn = function(x) 1) %>%
+  column_to_rownames(var = "value") %>%
+  as.data.frame()
 
 
 
