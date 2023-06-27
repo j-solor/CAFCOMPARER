@@ -7,6 +7,7 @@ library(GSVA)
 library(pheatmap)
 library(biomaRt)
 library(UpSetR)
+library(ComplexUpset)
 
 ################################################################################
 sample_ID = "private" # private | public
@@ -153,7 +154,7 @@ signatures_upset <- pivot_wider(signatures_human,
   as.data.frame()
 
 ### UpsetPlot
-upset(signatures_upset, 
+UpSetR::upset(signatures_upset, 
       nsets = length(signatures_upset), 
       nintersects = NA, 
       group.by = "sets")
