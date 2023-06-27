@@ -144,7 +144,7 @@ whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table 
 
 ## Comparative analysis using UpsetPlots 
 
-### Data format 
+### Data frame compatible with UpsetPlots
 signatures_upset <- pivot_wider(signatures_human, 
                         names_from = "signature", 
                         values_from = "signature",
@@ -153,10 +153,18 @@ signatures_upset <- pivot_wider(signatures_human,
   column_to_rownames(var = "value") %>%
   as.data.frame()
 
-### UpsetPlot
-UpSetR::upset(signatures_upset, 
-      nsets = length(signatures_upset), 
-      nintersects = NA, 
-      group.by = "sets")
+### List of the sets 
+signature_sets <- colnames(signatures_upset)
+
+### Colors by article
+colors <- hcl.colors(length(sign_list), palette = "viridis", alpha = NULL, rev = FALSE, fixup = TRUE)
+colors_article <- unlist(map2(sign_list, colors, ~ rep(.y, sum(str_detect(signature_sets, .x)))))
+list_colors_articles <- lapply(1:length(signature_sets), function(i) list(set = signature_sets[i], color = colors_article[i]))
+
+### UpsetPlot 
+ComplexUpset::upset(signatures_upset, signature_sets,
+                    group_by = "sets",
+                    mode = "exclusive_intersection",
+                    queries = c(lapply(list_colors_articles, function(x) upset_query(group = x$set, color = x$color)), lapply(list_colors_articles, function(x) upset_query(set = x$set, fill = x$color))))
 
 
