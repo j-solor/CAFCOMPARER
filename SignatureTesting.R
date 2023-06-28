@@ -33,7 +33,7 @@ acafs.raw <- read_tsv("data/CAF_rawcounts.tsv") %>% # count table
 ## Signatures
 if (is.null(signature_selection)){ # initialize at NULL
   signatures = tibble(signature = character(), value = character())
-  sign_list <- excel_sheets("data/CAF_signatures.xlsx") # list of sheet's names
+  sign_list <- excel_sheets("data/CAF_signatures.xlsx")[-1] # list of sheet's names
 for (sign in sign_list){
   signatures_temp <- read_xlsx("data/CAF_signatures.xlsx", sheet = sign) %>%
     rename_with( ~ paste0(sign,"_", .x)) %>%
