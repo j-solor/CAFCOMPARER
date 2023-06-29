@@ -159,15 +159,19 @@ signatures_upset <- pivot_wider(signatures_human,
 ### List of the sets 
 signature_sets <- colnames(signatures_upset)
 
-### Colors by article
-colors <- hcl.colors(length(sign_list), palette = "viridis", alpha = NULL, rev = FALSE, fixup = TRUE)
-colors_article <- unlist(map2(sign_list, colors, ~ rep(.y, sum(str_detect(signature_sets, .x)))))
-list_colors_articles <- lapply(1:length(signature_sets), function(i) list(set = signature_sets[i], color = colors_article[i]))
-
-### UpsetPlot 
+### Upset Plot without colors
 ComplexUpset::upset(signatures_upset, signature_sets,
                     group_by = "sets",
                     mode = "exclusive_intersection",
-                    queries = c(lapply(list_colors_articles, function(x) upset_query(group = x$set, color = x$color)), lapply(list_colors_articles, function(x) upset_query(set = x$set, fill = x$color))))
-
-
+                    min_size = 5,
+                    min_degree = 2,
+                    n_intersections = 25,
+                    base_annotations=list(
+                      'Intersection ratio'= intersection_ratio(
+                        text=list(
+                          vjust=0.5,
+                          hjust=-0.1,
+                          angle=90))),
+                    set_sizes=(
+                      upset_set_size()
+                      + geom_text(aes(label=after_stat(count)), hjust=1, stat='count')))
