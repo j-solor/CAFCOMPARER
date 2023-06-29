@@ -88,8 +88,10 @@ cafs.gene.expression <- as_tibble(cafs.choose.sym, rownames = "gene") %>%
 dplyr::mutate(cafs.gene.expression, CL = fct(CL, levels = arrange(cafs.gene.expression, desc(get(gene)))$CL)) %>%
   ggplot(aes(x = get(gene), y = CL)) + 
   geom_bar(stat = "identity") +
-  labs(x = "COL1A1", y = "CAFs") +
+  labs(x = gene, y = "CAFs") +
   theme_bw()
+
+ggsave(filename = paste0("output/",whatever_genes_filename,".png"))
 
 ## GSEA of signatures
 gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 5)
@@ -103,7 +105,7 @@ if (include_tech_annot == TRUE){
   
 } else {tech_annot = NULL}
 
-pheatmap(gsvaRes,
+pheatmap(gsvaRes, filename = "output/GSEA_heatmap.pdf",
          cluster_cols = T, cluster_rows = T, annotation_col = tech_annot)
 
 ### Specific pheatmaps per signature set (output in files)
@@ -141,6 +143,7 @@ for (sign in sign_list) {
 
 ## Whatever list of genes Enrichment and pheatmap
 whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/test.pdf")
+ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png"))
 
 ## Comparative analysis using UpsetPlots 
 
