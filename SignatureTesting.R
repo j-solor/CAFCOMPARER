@@ -91,7 +91,7 @@ dplyr::mutate(cafs.gene.expression, CL = fct(CL, levels = arrange(cafs.gene.expr
   labs(x = gene, y = "CAFs") +
   theme_bw()
 
-ggsave(filename = paste0("output/",whatever_genes_filename,".png"))
+ggsave(filename = paste0("output/", gene,".png"))
 
 ## GSEA of signatures
 gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 5)
@@ -142,8 +142,8 @@ for (sign in sign_list) {
 }
 
 ## Whatever list of genes Enrichment and pheatmap
-whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/test.pdf")
-ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png"))
+whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/Receptors_HGNC_heatmap.pdf")
+ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
 
 ## Comparative analysis using UpsetPlots 
 
