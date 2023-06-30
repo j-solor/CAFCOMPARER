@@ -183,3 +183,5 @@ ComplexUpset::upset(signatures_upset, signature_sets,
                       + geom_text(aes(label=after_stat(count)), hjust=1, stat='count')),
                     queries = c(lapply(list_colors_articles, function(x) upset_query(group = x$set, color = x$color)),
                                 lapply(list_colors_articles, function(x) upset_query(set = x$set, fill = x$color))))
+
+ggsave("output/Upset_plot.pdf", width = 22, height = 13) # save the Upset plot as pdf
