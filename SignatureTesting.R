@@ -6,7 +6,6 @@ library(readxl)
 library(GSVA)
 library(pheatmap)
 library(biomaRt)
-library(UpSetR)
 library(ComplexUpset)
 
 ################################################################################
