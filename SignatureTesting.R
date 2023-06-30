@@ -167,21 +167,21 @@ list_colors_articles <- lapply(1:length(signature_sets), function(i) list(set = 
 ### Upset Plot
 ComplexUpset::upset(signatures_upset, signature_sets,
                     group_by = "sets",
-                    mode = "exclusive_intersection",
-                    min_size = 2,
-                    min_degree = 2,
-                    n_intersections = 25,
+                    mode = "exclusive_intersection", # or inclusive_intersection
+                    min_size = 5, # minimum number of items in the displayed intersections 
+                    min_degree = 2, # minimum number of groups involved in an intersection
+                    n_intersections = 25, # number of intersections displayed on the plot (maximum)
                     keep_empty_groups=TRUE,
                     base_annotations=list(
-                      'Intersection ratio'= intersection_ratio(
+                      'Intersection ratio'= intersection_ratio( # display the ratio
                         text=list(
                           vjust=0.5,
                           hjust=-0.1,
                           angle=90))),
                     set_sizes=(
                       upset_set_size()
-                      + geom_text(aes(label=after_stat(count)), hjust=1, stat='count')),
-                    queries = c(lapply(list_colors_articles, function(x) upset_query(group = x$set, color = x$color)),
+                      + geom_text(aes(label=after_stat(count)), hjust=1, stat='count')), # display the number of genes in each set
+                    queries = c(lapply(list_colors_articles, function(x) upset_query(group = x$set, color = x$color)), # colors
                                 lapply(list_colors_articles, function(x) upset_query(set = x$set, fill = x$color))))
 
 ggsave("output/Upset_plot.pdf", width = 22, height = 13) # save the Upset plot as pdf
