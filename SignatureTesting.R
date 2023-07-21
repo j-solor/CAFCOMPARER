@@ -14,7 +14,7 @@ signature_selection = NULL  # Luo_NatCom2022 | Foster_CancerCell2022 | Huang_Can
 include_tech_annot = FALSE # TRUE | FALSE
 whatever_genes_filename = "Receptors_HGNC.csv" # Receptors_info.csv "whatever csv ythat uses tab as separator and has columns of groups (avoid spaces in names)
 ################################################################################
-setwd("/home/margaux.dore/Documents/CAFCOMPARER")
+setwd("/home/jacobo/Documents/02_TRANSDUCER/04_Deconvolution_TE/03_Sigantures/cell_types/fibroblast/PJ2003085/260523_CAFComparer/")
 
 # Functions 
 source("src/Exclude_0s.R")
