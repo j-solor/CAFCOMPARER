@@ -6,6 +6,7 @@ library(readxl)
 library(GSVA)
 library(pheatmap)
 library(biomaRt)
+library(ComplexUpset)
 
 ################################################################################
 sample_ID = "private" # private | public
@@ -31,7 +32,7 @@ acafs.raw <- read_tsv("data/CAF_rawcounts.tsv") %>% # count table
 ## Signatures
 if (is.null(signature_selection)){ # initialize at NULL
   signatures = tibble(signature = character(), value = character())
-  sign_list <- excel_sheets("data/CAF_signatures.xlsx") # list of sheet's names
+  sign_list <- excel_sheets("data/CAF_signatures.xlsx")[-1] # list of sheet's names
 for (sign in sign_list){
   signatures_temp <- read_xlsx("data/CAF_signatures.xlsx", sheet = sign) %>%
     rename_with( ~ paste0(sign,"_", .x)) %>%
@@ -86,8 +87,10 @@ cafs.gene.expression <- as_tibble(cafs.choose.sym, rownames = "gene") %>%
 dplyr::mutate(cafs.gene.expression, CL = fct(CL, levels = arrange(cafs.gene.expression, desc(get(gene)))$CL)) %>%
   ggplot(aes(x = get(gene), y = CL)) + 
   geom_bar(stat = "identity") +
-  labs(x = "COL1A1", y = "CAFs") +
+  labs(x = gene, y = "CAFs") +
   theme_bw()
+
+ggsave(filename = paste0("output/", gene,".png"))
 
 ## GSEA of signatures
 gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 5)
@@ -101,7 +104,7 @@ if (include_tech_annot == TRUE){
   
 } else {tech_annot = NULL}
 
-pheatmap(gsvaRes,
+pheatmap(gsvaRes, filename = "output/GSEA_heatmap.pdf",
          cluster_cols = T, cluster_rows = T, annotation_col = tech_annot)
 
 ### Specific pheatmaps per signature set (output in files)
@@ -138,5 +141,46 @@ for (sign in sign_list) {
 }
 
 ## Whatever list of genes Enrichment and pheatmap
-whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/test.pdf")
+whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/Receptors_HGNC_heatmap.pdf")
+ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
 
+## Comparative analysis using UpsetPlots 
+
+### Data frame compatible with UpsetPlots
+signatures_upset <- pivot_wider(signatures_human, 
+                        names_from = "signature", 
+                        values_from = "signature",
+                        values_fill = 0,
+                        values_fn = function(x) 1) %>%
+  column_to_rownames(var = "value") %>%
+  as.data.frame()
+
+### List of the sets 
+signature_sets <- colnames(signatures_upset)
+
+### Colors 
+list_colors <- hcl.colors(length(sign_list), palette = "viridis", alpha = NULL, rev = FALSE, fixup = TRUE)
+color_articles <- unlist(map2(sign_list, list_colors, ~ rep(.y, sum(str_detect(signature_sets, .x)))))
+list_colors_articles <- lapply(1:length(signature_sets), function(i) list(set = signature_sets[i], color = color_articles[i]))
+
+### Upset Plot
+ComplexUpset::upset(signatures_upset, signature_sets,
+                    group_by = "sets",
+                    mode = "exclusive_intersection", # or inclusive_intersection
+                    min_size = 5, # minimum number of items in the displayed intersections 
+                    min_degree = 2, # minimum number of groups involved in an intersection
+                    n_intersections = 25, # number of intersections displayed on the plot (maximum)
+                    keep_empty_groups=TRUE,
+                    base_annotations=list(
+                      'Intersection ratio'= intersection_ratio( # display the ratio
+                        text=list(
+                          vjust=0.5,
+                          hjust=-0.1,
+                          angle=90))),
+                    set_sizes=(
+                      upset_set_size()
+                      + geom_text(aes(label=after_stat(count)), hjust=1, stat='count')), # display the number of genes in each set
+                    queries = c(lapply(list_colors_articles, function(x) upset_query(group = x$set, color = x$color)), # colors
+                                lapply(list_colors_articles, function(x) upset_query(set = x$set, fill = x$color))))
+
+ggsave("output/Upset_plot.pdf", width = 22, height = 13) # save the Upset plot as pdf
