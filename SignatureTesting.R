@@ -142,7 +142,7 @@ for (sign in sign_list) {
 whatever_genes_analyser(file_path = paste0("data/", whatever_genes_filename), 
                         expression_table = cafs.choose.sym, 
                         scale_option = "row",
-                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf")
+                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf"))
                         
 ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
 
