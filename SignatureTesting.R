@@ -24,7 +24,7 @@ source("src/whatever_genes_analyser.R")
 source("src/dfs_corrplot.R")
 
 # Data loading
-## CAF
+## Expression Data
 acafs.info <- read_tsv("data/CAF_metadata.tsv") # metadata about CAFs 
 acafs.raw <- read_tsv("data/CAF_rawcounts.tsv") %>% # count table
   dplyr::select(EnsemblID, acafs.info$rawID) %>%
