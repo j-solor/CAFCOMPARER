@@ -48,7 +48,7 @@ for (sign in sign_list){
   
 }
 
-## Call the mouseID_to_humanID to only have human genes in signatures
+## Translate mice signatures to human
 ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl") # the mart
 signatures_human <- mouseID_to_humanID(signatures, ensembl)
 
@@ -80,7 +80,7 @@ cafs.choose.sym <- ID_converter(df = acafs.tmm,annotation_table = annot,
 
 # Analysis
 ## Barplot of whatever gene
-gene = "COL1A1"
+gene = "COL1A1" # replace this by whatever gene symbol
 cafs.gene.expression <- as_tibble(cafs.choose.sym, rownames = "gene") %>% 
   pivot_longer(cols = -gene ,names_to = "CL",values_to = "expression" ) %>%
   pivot_wider(id_cols = "CL", names_from = "gene", values_from = "expression")
@@ -96,7 +96,7 @@ ggsave(filename = paste0("output/", gene,".png"))
 ## GSEA of signatures
 gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 5)
 
-### pheatmap of all the CAF subtypes
+### pheatmap of all the CAF subtype enrichments
 if (include_tech_annot == TRUE){
   full_colanot <- c("proliferation", "passes", "Inmortalized", "tissue_origin",
                     "sex", "age", "tumor_differentiation", "initial_sample",
@@ -108,10 +108,7 @@ if (include_tech_annot == TRUE){
 pheatmap(gsvaRes, filename = "output/GSEA_heatmap.pdf",
          cluster_cols = T, cluster_rows = T, annotation_col = tech_annot)
 
-### Specific pheatmaps per signature set (output in files)
-
-#### Convert the mouse gene names into their human ortholog
-
+### Detailed pheatmaps per signature set (output in files)
 for (sign in sign_list) {
   sign_sub <- dplyr::filter(signatures_human, str_detect(signature, sign)) %>% # filter the signatures == sign
     dplyr::filter(value %in% rownames(cafs.choose.sym)) %>% # only keep the values present in cafs.choose.sym
@@ -142,10 +139,15 @@ for (sign in sign_list) {
 }
 
 ## Whatever list of genes Enrichment and pheatmap
-whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/Receptors_HGNC_heatmap.pdf")
+whatever_genes_analyser(file_path = paste0("data/", whatever_genes_filename), 
+                        expression_table = cafs.choose.sym, 
+                        scale_option = "row",
+                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf")
+                        
 ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
 
-## Comparative analysis using Corrplots
+# Comparative Analysis of CAF subtype signatures
+## Quantitative analysis using Corrplots
 gsvaRes_corr <- as_tibble(gsvaRes, rownames = "signature") %>%
   pivot_longer(names_to = "CL", cols = -signature) %>%
   pivot_wider(names_from = "signature") %>%
@@ -170,8 +172,7 @@ ggplot(gsvaRes_corr, aes(measure1, measure2, fill=r, label=round(r_if_sig,2))) +
   ggpubr::rotate_x_text(angle = 90)
 
   
-## Comparative analysis using UpsetPlots 
-
+## Qualitative analysis using UpsetPlots 
 ### Data frame compatible with UpsetPlots
 signatures_upset <- pivot_wider(signatures_human, 
                         names_from = "signature", 
