@@ -21,6 +21,7 @@ source("src/Exclude_0s.R")
 source("src/ID_converter.R")
 source("src/mouseID_to_humanID.R")
 source("src/whatever_genes_analyser.R")
+source("src/dfs_corrplot.R")
 
 # Data loading
 ## CAF
@@ -144,6 +145,31 @@ for (sign in sign_list) {
 whatever_genes_analyser(file_path = "data/Receptors_HGNC.csv", expression_table = cafs.choose.sym, scale_option = "row", output_file = "output/Receptors_HGNC_heatmap.pdf")
 ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
 
+## Comparative analysis using Corrplots
+gsvaRes_corr <- as_tibble(gsvaRes, rownames = "signature") %>%
+  pivot_longer(names_to = "CL", cols = -signature) %>%
+  pivot_wider(names_from = "signature") %>%
+  column_to_rownames("CL") %>%
+  formatted_cors(cor.stat = "pearson")
+
+clust <- dplyr::select(gsvaRes_corr, measure1, measure2, r) %>% 
+  pivot_wider(names_from=measure2, values_from = r) %>%
+  column_to_rownames("measure1") %>%
+  dist() %>%
+  hclust()
+
+ggplot(gsvaRes_corr, aes(measure1, measure2, fill=r, label=round(r_if_sig,2))) +
+  geom_tile() +
+  labs(x = NULL, y = NULL, fill = "Pearson's\nAbsolute\nCorrelation", title="Correlations Signatures",
+       subtitle="Only significant correlation coefficients shown (95% I.C.)") +
+  scale_fill_gradient2(mid="#FBFEF9",low="#0C6291",high="#A63446", limits=c(-1,1)) +
+  geom_text() +
+  theme_classic() +
+  scale_x_discrete(expand=c(0,0),limits = clust$labels[clust$order]) +
+  scale_y_discrete(expand=c(0,0),limits = clust$labels[clust$order]) +
+  ggpubr::rotate_x_text(angle = 90)
+
+  
 ## Comparative analysis using UpsetPlots 
 
 ### Data frame compatible with UpsetPlots
