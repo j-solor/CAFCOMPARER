@@ -78,21 +78,9 @@ annot <- AnnotationDbi::select(org.Hs.eg.db, keys=rownames(acafs.tmm), columns="
 cafs.choose.sym <- ID_converter(df = acafs.tmm,annotation_table = annot,
                                 old_IDs = "ENSEMBL", new_IDs = "SYMBOL")
 
-# Analysis
-## Barplot of whatever gene
-gene = "COL1A1" # replace this by whatever gene symbol
-cafs.gene.expression <- as_tibble(cafs.choose.sym, rownames = "gene") %>% 
-  pivot_longer(cols = -gene ,names_to = "CL",values_to = "expression" ) %>%
-  pivot_wider(id_cols = "CL", names_from = "gene", values_from = "expression")
-
-dplyr::mutate(cafs.gene.expression, CL = fct(CL, levels = arrange(cafs.gene.expression, desc(get(gene)))$CL)) %>%
-  ggplot(aes(x = get(gene), y = CL)) + 
-  geom_bar(stat = "identity") +
-  labs(x = gene, y = "CAFs") +
-  theme_bw()
-
-ggsave(filename = paste0("output/", gene,".png"))
-
+################################################################################
+# 1.  Analyze the enrichment of each CAF line in the different CAF subtypes
+################################################################################
 ## GSEA of signatures
 gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 5)
 
@@ -138,15 +126,9 @@ for (sign in sign_list) {
              annotation_row = sign_sub)
 }
 
-## Whatever list of genes Enrichment and pheatmap
-whatever_genes_analyser(file_path = paste0("data/", whatever_genes_filename), 
-                        expression_table = cafs.choose.sym, 
-                        scale_option = "row",
-                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf"))
-                        
-ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
-
-# Comparative Analysis of CAF subtype signatures
+################################################################################
+# Perform a comparative analysis of the different CAF signatures.
+################################################################################
 ## Quantitative analysis using Corrplots
 gsvaRes_corr <- as_tibble(gsvaRes, rownames = "signature") %>%
   pivot_longer(names_to = "CL", cols = -signature) %>%
@@ -171,14 +153,14 @@ ggplot(gsvaRes_corr, aes(measure1, measure2, fill=r, label=round(r_if_sig,2))) +
   scale_y_discrete(expand=c(0,0),limits = clust$labels[clust$order]) +
   ggpubr::rotate_x_text(angle = 90)
 
-  
+
 ## Qualitative analysis using UpsetPlots 
 ### Data frame compatible with UpsetPlots
 signatures_upset <- pivot_wider(signatures_human, 
-                        names_from = "signature", 
-                        values_from = "signature",
-                        values_fill = 0,
-                        values_fn = function(x) 1) %>%
+                                names_from = "signature", 
+                                values_from = "signature",
+                                values_fill = 0,
+                                values_fn = function(x) 1) %>%
   column_to_rownames(var = "value") %>%
   as.data.frame()
 
@@ -211,3 +193,29 @@ ComplexUpset::upset(signatures_upset, signature_sets,
                                 lapply(list_colors_articles, function(x) upset_query(set = x$set, fill = x$color))))
 
 ggsave("output/Upset_plot.pdf", width = 22, height = 13) # save the Upset plot as pdf
+
+################################################################################
+# 3. Explore the enrichment and expression of other genes
+################################################################################
+## Barplot of whatever gene
+gene = "COL1A1" # replace this by whatever gene symbol
+cafs.gene.expression <- as_tibble(cafs.choose.sym, rownames = "gene") %>% 
+  pivot_longer(cols = -gene ,names_to = "CL",values_to = "expression" ) %>%
+  pivot_wider(id_cols = "CL", names_from = "gene", values_from = "expression")
+
+dplyr::mutate(cafs.gene.expression, CL = fct(CL, levels = arrange(cafs.gene.expression, desc(get(gene)))$CL)) %>%
+  ggplot(aes(x = get(gene), y = CL)) + 
+  geom_bar(stat = "identity") +
+  labs(x = gene, y = "CAFs") +
+  theme_bw()
+
+ggsave(filename = paste0("output/", gene,".png"))
+
+
+## Whatever list of genes Enrichment and pheatmap
+whatever_genes_analyser(file_path = paste0("data/", whatever_genes_filename), 
+                        expression_table = cafs.choose.sym, 
+                        scale_option = "row",
+                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf"))
+                        
+ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
