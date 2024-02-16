@@ -7,6 +7,9 @@ library(GSVA)
 library(pheatmap)
 library(biomaRt)
 library(ComplexUpset)
+library(Hmisc)
+library(ggpubr)
+library(sva)
 
 ################################################################################
 sample_ID = "private" # private | public
@@ -67,15 +70,21 @@ if (sample_ID == "public") {
   acafs.info <- column_to_rownames(acafs.info, "Name")
 }
 
-acafs.raw <-column_to_rownames(acafs.raw, "EnsemblID") # count table (EnsemblID)
+acafs.raw <- column_to_rownames(acafs.raw, "EnsemblID") # count table (EnsemblID)
 
 ## Normalize
 acafs.tmm <- Exclude_0s(acafs.raw, 0.5) %>% DGEList() %>% # normalized count table
   calcNormFactors(method = "TMM") %>% cpm() 
 
+## Batch effect correction
+acafs.tmm.nobatch <- acafs.tmm %>% as.matrix() %>% 
+  ComBat(batch = acafs.info$extraction_group, 
+         par.prior=TRUE, 
+         prior.plots=FALSE)
+
 ## convert ID
-annot <- AnnotationDbi::select(org.Hs.eg.db, keys=rownames(acafs.tmm), columns="SYMBOL", keytype="ENSEMBL") # Annotation table
-cafs.choose.sym <- ID_converter(df = acafs.tmm,annotation_table = annot,
+annot <- AnnotationDbi::select(org.Hs.eg.db, keys=rownames(acafs.tmm.nobatch), columns="SYMBOL", keytype="ENSEMBL") # Annotation table
+cafs.choose.sym <- ID_converter(df = acafs.tmm.nobatch,annotation_table = annot,
                                 old_IDs = "ENSEMBL", new_IDs = "SYMBOL")
 
 # Analysis
@@ -142,7 +151,7 @@ for (sign in sign_list) {
 whatever_genes_analyser(file_path = paste0("data/", whatever_genes_filename), 
                         expression_table = cafs.choose.sym, 
                         scale_option = "row",
-                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf")
+                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf"))
                         
 ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
 
