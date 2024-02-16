@@ -232,6 +232,7 @@ net <- decoupleR::get_collectri(organism = 'human', split_complexes = F)
 ### Viper
 res_Viper <- run_viper(Gene_expression_matrix, net)
 
+#### Scale Viper results
 res_Viper_scaled <- res_Viper %>%
   pivot_wider(id_cols = 'condition', names_from = 'source',
               values_from = 'score') %>%
@@ -239,6 +240,7 @@ res_Viper_scaled <- res_Viper %>%
   as.matrix() %>%
   scale()
 
+#### TFs rank
 TFs_rank <- res_Viper %>%
   group_by(source) %>%
   summarise(std = sd(score)) %>% 
