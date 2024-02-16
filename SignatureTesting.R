@@ -230,6 +230,15 @@ Gene_expression_matrix <- cafs.choose.sym %>% as.matrix()
 net <- decoupleR::get_collectri(organism = 'human', split_complexes = F)
 
 ### Viper
-Viper <- run_viper(Gene_expression_matrix, net)
+res_Viper <- run_viper(Gene_expression_matrix, net)
+
+res_Viper_scaled <- res_Viper %>%
+  pivot_wider(id_cols = 'condition', names_from = 'source',
+              values_from = 'score') %>%
+  column_to_rownames('condition') %>%
+  as.matrix() %>%
+  scale()
+
+
 
 
