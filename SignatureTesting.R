@@ -10,6 +10,7 @@ library(ComplexUpset)
 library(Hmisc)
 library(ggpubr)
 library(sva)
+library(decoupleR)
 
 ################################################################################
 sample_ID = "private" # private | public
@@ -220,3 +221,15 @@ ComplexUpset::upset(signatures_upset, signature_sets,
                                 lapply(list_colors_articles, function(x) upset_query(set = x$set, fill = x$color))))
 
 ggsave("output/Upset_plot.pdf", width = 22, height = 13) # save the Upset plot as pdf
+
+## Quantitative analysis : Transcription factors activity inference 
+### Gene expression matrix 
+Gene_expression_matrix <- cafs.choose.sym %>% as.matrix()
+
+### Gene Regulatory Network : CollecTRI
+net <- decoupleR::get_collectri(organism = 'human', split_complexes = F)
+
+### Viper
+Viper <- run_viper(Gene_expression_matrix, net)
+
+
