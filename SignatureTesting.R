@@ -265,6 +265,12 @@ heatmap_data <- res_Viper_TFs_rank %>%
   head(50) %>%
   dplyr::select(-Rank)
 
+##### Color palette : 
+palette_length = 100
+my_color = colorRampPalette(c("Darkblue", "white","red"))(palette_length)
+my_breaks <- c(seq(-3, 0, length.out=ceiling(palette_length/2) + 1),
+               seq(0.05, 3, length.out=floor(palette_length/2)))
+
 ##### Heatmap :
 pheatmap(heatmap_data, border_color = NA, color=my_color, breaks = my_breaks, main = "TFs activity inference - Viper")
 
