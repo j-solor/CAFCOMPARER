@@ -257,6 +257,15 @@ res_Viper_TFs_rank <- res_Viper_scaled %>%
   column_to_rownames("TF") %>%
   as.matrix()
 
+#### Heatmap
+##### Data :
+heatmap_data <- res_Viper_TFs_rank %>%
+  as.data.frame() %>%
+  dplyr::arrange(Rank) %>%
+  head(50) %>%
+  dplyr::select(-Rank)
 
+##### Heatmap :
+pheatmap(heatmap_data, border_color = NA, color=my_color, breaks = my_breaks, main = "TFs activity inference - Viper")
 
 
