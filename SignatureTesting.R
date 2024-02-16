@@ -239,6 +239,22 @@ res_Viper_scaled <- res_Viper %>%
   as.matrix() %>%
   scale()
 
+TFs_rank <- res_Viper %>%
+  group_by(source) %>%
+  summarise(std = sd(score)) %>% 
+  arrange(-abs(std)) %>%
+  mutate(Rank = row_number()) %>%
+  dplyr::rename("TF" = source)
+
+res_Viper_TFs_rank <- res_Viper_scaled %>%
+  t() %>%
+  as.data.frame() %>%
+  rownames_to_column("TF") %>%
+  left_join(., TFs_rank, by = "TF") %>%
+  dplyr::select(-std) %>%
+  column_to_rownames("TF") %>%
+  as.matrix()
+
 
 
 
