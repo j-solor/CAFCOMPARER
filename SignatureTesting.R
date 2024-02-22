@@ -294,3 +294,25 @@ for (sign in sign_list) {
   }
 }
 
+##### Heatmap with the gsva of chosen articles : 
+TFs_Cell_lines_gsva_annotation <- function(data, results_gsva, articles_list){
+  
+  sign_CAFs <- list()
+  
+  for (article in articles_list) {
+    sign_CAFs <- append(sign_CAFs, grep(paste0("^", article, "_"), rownames(results_gsva), value = TRUE)) %>% unlist()
+  }
+  
+  annotation_gsva <- results_gsva %>%
+    as.data.frame() %>%
+    rownames_to_column("Signatures") %>%
+    filter(Signatures %in% sign_CAFs) %>%
+    column_to_rownames("Signatures") %>%
+    t() %>%
+    as.data.frame()
+  
+  pheatmap(data, border_color = NA, color=my_color, breaks = my_breaks, 
+           main = paste0("TFs activity inference"), annotation_col = annotation_gsva)
+}
+
+TFs_Cell_lines_gsva_annotation(heatmap_data, gsvaRes, c("Grauel_NatComms2020", "Foster_CancerCell2022", "Huang_CancerCell2022"))
