@@ -316,3 +316,25 @@ TFs_Cell_lines_gsva_annotation <- function(data, results_gsva, articles_list){
 }
 
 TFs_Cell_lines_gsva_annotation(heatmap_data, gsvaRes, c("Grauel_NatComms2020", "Foster_CancerCell2022", "Huang_CancerCell2022"))
+
+### Signatures Subgroups 
+#### Correlation table into matrix : 
+clust_tb <- dplyr::select(gsvaRes_corr, measure1, measure2, r) %>% 
+  pivot_wider(names_from = measure2, values_from = r) %>%
+  column_to_rownames("measure1")
+
+#### Silhouette methods with Kmeans :
+Silhouette_kmeans <- fviz_nbclust(clust_tb, kmeans, method = "silhouette",  k.max = 20) # 2 ???
+Silhouette_kmeans$data
+
+#### Creation of the subgroups : 
+k = 7 # 10 or 7 (2 or 3 ???)
+Sign_subgroups <- cutree(clust, k = k) %>% 
+  as_tibble(rownames = "Signatures") %>%
+  dplyr::rename(Cluster = "value") %>%
+  arrange(.,Cluster) %>%
+  mutate(Cluster = as.character(Cluster))
+
+#### Visualization
+plot(clust, hang=-1)
+rect.hclust(clust, k = k, border = c("orange","red", "purple", "blue", "green"))
