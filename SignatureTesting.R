@@ -259,10 +259,12 @@ res_Viper_TFs_rank <- res_Viper_scaled %>%
 
 #### Heatmap
 ##### Data :
+nb_TFs <- 50
+
 heatmap_data <- res_Viper_TFs_rank %>%
   as.data.frame() %>%
   dplyr::arrange(Rank) %>%
-  head(50) %>%
+  head(nb_TFs) %>%
   dplyr::select(-Rank)
 
 ##### Color palette : 
@@ -271,7 +273,24 @@ my_color = colorRampPalette(c("Darkblue", "white","red"))(palette_length)
 my_breaks <- c(seq(-3, 0, length.out=ceiling(palette_length/2) + 1),
                seq(0.05, 3, length.out=floor(palette_length/2)))
 
-##### Heatmap :
-pheatmap(heatmap_data, border_color = NA, color=my_color, breaks = my_breaks, main = "TFs activity inference - Viper")
-
+##### Heatmap with the gsva of each article : 
+for (sign in sign_list) {
+  
+  sign_CAFs <- grep(paste0("^", sign, "_"), rownames(gsvaRes), value = TRUE)
+  
+  if(length(sign_CAFs) > 0) {
+    
+    annotation_gsva <- gsvaRes %>%
+      as.data.frame() %>%
+      rownames_to_column("Signatures") %>%
+      filter(Signatures %in% sign_CAFs) %>%
+      column_to_rownames("Signatures") %>%
+      t() %>%
+      as.data.frame()
+    
+    pheatmap(heatmap_data, cellwidth=15, cellheight=15, filename = paste0("output/TFs_Cell_lines_", sign, "_", nb_TFs,"_TFs.pdf"),
+             border_color = NA, color=my_color, breaks = my_breaks, main = paste0("TFs activity inference (", sign, ")"),
+             annotation_col = annotation_gsva)
+  }
+}
 
