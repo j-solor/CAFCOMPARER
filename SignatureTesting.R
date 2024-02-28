@@ -306,6 +306,11 @@ TFs_Cell_lines_gsva_annotation <- function(data, results_gsva, articles_list){
     t() %>%
     as.data.frame()
   
+  palette_length = 100
+  my_color = colorRampPalette(c("Darkblue", "white","red"))(palette_length)
+  my_breaks <- c(seq(-3, 0, length.out=ceiling(palette_length/2) + 1),
+                 seq(0.05, 3, length.out=floor(palette_length/2)))
+  
   pheatmap(data, border_color = NA, color=my_color, breaks = my_breaks, 
            main = paste0("TFs activity inference"), annotation_col = annotation_gsva)
 }
