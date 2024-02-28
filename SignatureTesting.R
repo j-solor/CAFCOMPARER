@@ -232,14 +232,6 @@ net <- decoupleR::get_collectri(organism = 'human', split_complexes = F)
 ### Viper
 res_Viper <- run_viper(Gene_expression_matrix, net)
 
-#### Scale Viper results
-res_Viper_scaled <- res_Viper %>%
-  pivot_wider(id_cols = 'condition', names_from = 'source',
-              values_from = 'score') %>%
-  column_to_rownames('condition') %>%
-  as.matrix() %>%
-  scale()
-
 #### TFs rank
 TFs_rank <- res_Viper %>%
   group_by(source) %>%
@@ -248,20 +240,23 @@ TFs_rank <- res_Viper %>%
   mutate(Rank = row_number()) %>%
   dplyr::rename("TF" = source)
 
-res_Viper_TFs_rank <- res_Viper_scaled %>%
+#### Heatmap
+##### Data (Viper results scaled and TFs filtered) :
+nb_TFs <- 50
+
+heatmap_data <- res_Viper %>%
+  pivot_wider(id_cols = 'condition', names_from = 'source',
+              values_from = 'score') %>%
+  column_to_rownames('condition') %>%
+  as.matrix() %>%
+  scale() %>%
   t() %>%
   as.data.frame() %>%
   rownames_to_column("TF") %>%
   left_join(., TFs_rank, by = "TF") %>%
   dplyr::select(-std) %>%
   column_to_rownames("TF") %>%
-  as.matrix()
-
-#### Heatmap
-##### Data :
-nb_TFs <- 50
-
-heatmap_data <- res_Viper_TFs_rank %>%
+  as.matrix() %>%
   as.data.frame() %>%
   dplyr::arrange(Rank) %>%
   head(nb_TFs) %>%
