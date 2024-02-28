@@ -11,6 +11,7 @@ library(Hmisc)
 library(ggpubr)
 library(sva)
 library(decoupleR)
+library(factoextra)
 
 ################################################################################
 sample_ID = "private" # private | public
