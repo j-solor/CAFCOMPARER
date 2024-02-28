@@ -290,6 +290,8 @@ for (sign in sign_list) {
   }
 }
 
+dev.off()
+
 ##### Heatmap with the gsva of chosen articles : 
 TFs_Cell_lines_gsva_annotation <- function(data, results_gsva, articles_list){
   
