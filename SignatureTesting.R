@@ -368,3 +368,35 @@ Tb_sign_TFs_cor <- full_join(Tb_sign_cor, Tb_TFs_cor, by = "CAFs") %>%
 #### Filter the number of TFs
 Tb_sign_TFs_cor_filter <- Tb_sign_TFs_cor %>% 
   dplyr::filter(TFs %in% pull(head(TFs_rank, nb_TFs), TF))
+
+#### Visualization
+##### The data
+data_heatmap_cor <- Tb_sign_TFs_cor_filter %>%
+  dplyr::select(Signatures, TFs, r, r_if_sig) %>%
+  left_join(Sign_subgroups, by = "Signatures") %>%
+  arrange(Cluster) %>%
+  dplyr::select(-Cluster)
+
+TFs_Sign_heatmap <- data_heatmap_cor %>%
+  dplyr::select(-r_if_sig) %>%
+  pivot_wider(names_from = Signatures, values_from = r) %>%
+  column_to_rownames("TFs")
+
+##### The annotations
+significance_matrix <- data_heatmap_cor %>%
+  dplyr::select(-r) %>%
+  mutate(across(r_if_sig, ~ifelse(is.na(.), "", as.character(round(., 2))))) %>%
+  pivot_wider(names_from = Signatures, values_from = r_if_sig) %>%
+  column_to_rownames("TFs")
+
+annotation_clusters <- Sign_subgroups %>%
+  column_to_rownames("Signatures")
+
+##### The heatmap
+pheatmap(TFs_Sign_heatmap, cluster_rows = F, cluster_cols = F, 
+         display_numbers = significance_matrix,
+         fontsize_number = 10,
+         annotation_col = annotation_clusters, 
+         # cellwidth =27, cellheight = 15,
+         # filename = paste0("output/TFs_Signatures_", nb_TFs,"_TFs.pdf")
+)
