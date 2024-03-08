@@ -341,3 +341,30 @@ Sign_subgroups <- cutree(clust, k = k) %>%
 #### Visualization
 plot(clust, hang=-1)
 rect.hclust(clust, k = k, border = c("orange","red", "purple", "blue", "green"))
+
+### Correlation between the TFs and the signatures
+#### The data 
+Tb_sign_cor <- t(gsvaRes) %>%
+  as.data.frame() %>%
+  rownames_to_column("CAFs")
+
+Tb_TFs_cor <- res_Viper %>%
+  pivot_wider(id_cols = 'condition', names_from = 'source',
+              values_from = 'score') %>%
+  as.data.frame() %>%
+  dplyr::rename("CAFs" = "condition")
+
+#### Correlation with formatted_cors and Pearson
+Tb_sign_TFs_cor <- full_join(Tb_sign_cor, Tb_TFs_cor, by = "CAFs") %>%
+  column_to_rownames("CAFs") %>%
+  as.data.frame() %>%
+  formatted_cors(cor.stat = "pearson") %>%
+  dplyr::filter(measure1 %in% names(Tb_sign_cor)[names(Tb_sign_cor)!="CAFs"]) %>%
+  dplyr::rename("Signatures" = measure1) %>%
+  dplyr::filter(measure2 %in% names(Tb_TFs_cor)[names(Tb_TFs_cor)!="CAFs"]) %>%
+  dplyr::rename("TFs" = measure2) %>%
+  left_join(., Sign_subgroups, by = "Signatures")
+
+#### Filter the number of TFs
+Tb_sign_TFs_cor_filter <- Tb_sign_TFs_cor %>% 
+  dplyr::filter(TFs %in% pull(head(TFs_rank, nb_TFs), TF))
