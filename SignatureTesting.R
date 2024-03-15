@@ -327,8 +327,9 @@ clust_tb <- dplyr::select(gsvaRes_corr, measure1, measure2, r) %>%
   column_to_rownames("measure1")
 
 #### Silhouette methods with Kmeans :
-Silhouette_kmeans <- fviz_nbclust(clust_tb, kmeans, method = "silhouette",  k.max = 20) # 2 ???
-Silhouette_kmeans$data
+silhouette <- fviz_nbclust(clust_tb, hcut, method = "silhouette") +
+  labs(subtitle = "Silhouette method")
+silhouette$data
 
 #### Creation of the subgroups : 
 k = 7 # 10 or 7 (2 or 3 ???)
