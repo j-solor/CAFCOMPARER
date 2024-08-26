@@ -6,7 +6,10 @@ library(readxl)
 library(GSVA)
 library(pheatmap)
 library(biomaRt)
-library(ComplexUpset)
+library(ComplexUpset) #devtools::install_github("krassowski/complex-upset")
+library(Hmisc)
+library(ggpubr)
+library(sva)
 
 ################################################################################
 sample_ID = "private" # private | public
@@ -67,22 +70,28 @@ if (sample_ID == "public") {
   acafs.info <- column_to_rownames(acafs.info, "Name")
 }
 
-acafs.raw <-column_to_rownames(acafs.raw, "EnsemblID") # count table (EnsemblID)
+acafs.raw <- column_to_rownames(acafs.raw, "EnsemblID") # count table (EnsemblID)
 
 ## Normalize
 acafs.tmm <- Exclude_0s(acafs.raw, 0.5) %>% DGEList() %>% # normalized count table
   calcNormFactors(method = "TMM") %>% cpm() 
 
+## Batch effect correction
+acafs.tmm.nobatch <- acafs.tmm %>% as.matrix() %>% 
+  ComBat(batch = acafs.info$extraction_group, 
+         par.prior=TRUE, 
+         prior.plots=FALSE)
+
 ## convert ID
-annot <- AnnotationDbi::select(org.Hs.eg.db, keys=rownames(acafs.tmm), columns="SYMBOL", keytype="ENSEMBL") # Annotation table
-cafs.choose.sym <- ID_converter(df = acafs.tmm,annotation_table = annot,
+annot <- AnnotationDbi::select(org.Hs.eg.db, keys=rownames(acafs.tmm.nobatch), columns="SYMBOL", keytype="ENSEMBL") # Annotation table
+cafs.choose.sym <- ID_converter(df = acafs.tmm.nobatch,annotation_table = annot,
                                 old_IDs = "ENSEMBL", new_IDs = "SYMBOL")
 
 ################################################################################
 # 1.  Analyze the enrichment of each CAF line in the different CAF subtypes
 ################################################################################
 ## GSEA of signatures
-gsvaRes <- gsva(cafs.choose.sym %>% data.matrix(), list_of_signatures, min.sz = 5)
+gsvaRes <- gsva(param = gsvaParam(exprData = cafs.choose.sym %>% data.matrix(), geneSets = list_of_signatures, minSize = 5))
 
 ### pheatmap of all the CAF subtype enrichments
 if (include_tech_annot == TRUE){
@@ -126,9 +135,19 @@ for (sign in sign_list) {
              annotation_row = sign_sub)
 }
 
+
 ################################################################################
 # Perform a comparative analysis of the different CAF signatures.
 ################################################################################
+## Whatever list of genes Enrichment and pheatmap
+whatever_genes_analyser(file_path = paste0("data/", whatever_genes_filename), 
+                        expression_table = cafs.choose.sym, 
+                        scale_option = "row",
+                        output_file = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"), "_heatmap.pdf"))
+                        
+ggsave(filename = paste0("output/", str_remove(whatever_genes_filename, "\\..*$"),"_boxplot.png")) # save the boxplot
+
+# Comparative Analysis of CAF subtype signatures
 ## Quantitative analysis using Corrplots
 gsvaRes_corr <- as_tibble(gsvaRes, rownames = "signature") %>%
   pivot_longer(names_to = "CL", cols = -signature) %>%
