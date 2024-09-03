@@ -36,7 +36,7 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option,
   genes_by_set <- split(whatever_genes, f = whatever_genes$signature) %>% # list_of_whatever_genes
     map(~ .$value)
   
-  gsvaRes <- gsva(data.matrix(expression_table), genes_by_set)
+  gsvaRes <- gsva(gsvaParam(exprData = data.matrix(expression_table), geneSets = genes_by_set))
   
   # Plots
   ## Heatmap
@@ -69,7 +69,6 @@ whatever_genes_analyser <- function(file_path, expression_table, scale_option,
   genes_boxplot_organized <- genes_tb_boxplot %>% # whatever_genes_organized
     dplyr::mutate(CL = fct(CL, levels = levels$CL)) # tb_organized
   
-  dev.off()
   
   boxplot <- ggplot(genes_boxplot_organized, aes(x=CL, y=value, fill=Signature)) + 
     geom_boxplot() +
